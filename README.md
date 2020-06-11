@@ -1,5 +1,6 @@
 # Policies
 ![CI](https://github.com/corestackin/corestack-policies/workflows/CI/badge.svg) ![jsonlint](https://img.shields.io/badge/json%20lint-enabled-blue)
+
 Corestack Policies Development Kit (CDK)
 
 ## Folder Hierarchy
