@@ -1,0 +1,31 @@
+{
+  "name": "Azure_Audit_Vulns_Container_Security_Config_Remediated",
+  "policy_id": "/providers/Microsoft.Authorization/policyDefinitions/e8cbc669-f12d-49eb-93e7-9273119e9933",
+  "display_name": "Azure Audit Vulns Container Security Config Remediated",
+  "description": "Audit vulnerabilities in security configuration on machines with Docker installed and display as recommendations in Azure Security Center",
+  "category": "service",
+  "status": "active",
+  "content": "{\n \"policyType\": \"BuiltIn\",\n \"mode\": \"All\",\n \"metadata\": {\n \"policy_id\": \"/providers/Microsoft.Authorization/policyDefinitions/e8cbc669-f12d-49eb-93e7-9273119e9933\",\n \"policy_description\": \"Audit vulnerabilities in security configuration on machines with Docker installed and display as recommendations in Azure Security Center\",\n \"classification\": \"Security\",\n \"sub_classification\": \"End Point protection\",\n \"resource_type\": [\n \"Containers\"\n ],\n \"severity\": \"high\",\n \"uri\": \"policy/azure_policy/global/azure/compliance/others/LuvjZ\"\n },\n \"parameters\": {\n \"effect\": {\n \"type\": \"String\",\n \"allowedValues\": [\n \"AuditIfNotExists\",\n \"Disabled\"\n ],\n \"defaultValue\": \"AuditIfNotExists\",\n \"metadata\": {\n \"displayName\": \"Effect\",\n \"description\": \"Enable or disable the execution of the policy\"\n }\n }\n },\n \"policyRule\": {\n \"if\": {\n \"field\": \"type\",\n \"in\": [\n \"Microsoft.Compute/virtualMachines\",\n \"Microsoft.ClassicCompute/virtualMachines\",\n \"Microsoft.Compute/virtualMachineScaleSets\"\n ]\n },\n \"then\": {\n \"effect\": \"[parameters('effect')]\",\n \"details\": {\n \"type\": \"Microsoft.Security/complianceResults\",\n \"name\": \"ContainerBenchmark\",\n \"existenceCondition\": {\n \"field\": \"Microsoft.Security/complianceResults/resourceStatus\",\n \"in\": [\n \"OffByPolicy\",\n \"Healthy\"\n ]\n }\n }\n }\n }\n}\n",
+  "parameters": {},
+  "classification": "Security",
+  "sub_classification": "End Point protection",
+  "resource_type": [
+    "Containers"
+  ],
+  "severity": "high",
+  "type": [
+    "Cloud"
+  ],
+  "services": [
+    "Azure"
+  ],
+  "scope": "global",
+  "metadata": {},
+  "resources": [],
+  "is_temp": false,
+  "is_system_policy": false,
+  "recommendations": [
+    "Azure_Audit_Vulns_Container_Security_Config_Remediated"
+  ],
+  "uri": "policy/azure_policy/global/azure/compliance/others/LuvjZ"
+}

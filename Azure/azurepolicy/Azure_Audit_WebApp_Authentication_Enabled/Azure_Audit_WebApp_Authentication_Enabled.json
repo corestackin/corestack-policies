@@ -1,0 +1,31 @@
+{
+  "name": "Azure_Audit_WebApp_Authentication_Enabled",
+  "policy_id": "/providers/Microsoft.Authorization/policyDefinitions/95bccee9-a7f8-4bec-9ee9-62c3473701fc",
+  "display_name": "Azure Audit WebApp Authentication Enabled",
+  "description": "Azure App Service Authentication is a feature that can prevent anonymous HTTP requests from reaching the web app, or authenticate those that have tokens before they reach the web app.",
+  "category": "service",
+  "status": "active",
+  "content": "{\n \"policyType\": \"BuiltIn\",\n \"mode\": \"Indexed\",\n \"metadata\": {\n \"policy_id\": \"/providers/Microsoft.Authorization/policyDefinitions/95bccee9-a7f8-4bec-9ee9-62c3473701fc\",\n \"policy_description\": \"Azure App Service Authentication is a feature that can prevent anonymous HTTP requests from reaching the web app, or authenticate those that have tokens before they reach the web app.\",\n \"classification\": \"Security\",\n \"sub_classification\": \"Application\",\n \"resource_type\": [\n \"Web_Apps\"\n ],\n \"severity\": \"medium\",\n \"uri\": \"policy/azure_policy/global/azure/compliance/others/lKMjK\"\n },\n \"parameters\": {\n \"effect\": {\n \"type\": \"String\",\n \"allowedValues\": [\n \"AuditIfNotExists\",\n \"Disabled\"\n ],\n \"defaultValue\": \"AuditIfNotExists\",\n \"metadata\": {\n \"displayName\": \"Effect\",\n \"description\": \"Enable or disable the execution of the policy\"\n }\n }\n },\n \"policyRule\": {\n \"if\": {\n \"allOf\": [\n {\n \"field\": \"type\",\n \"equals\": \"Microsoft.Web/sites\"\n },\n {\n \"field\": \"kind\",\n \"like\": \"app*\"\n }\n ]\n },\n \"then\": {\n \"effect\": \"[parameters('effect')]\",\n \"details\": {\n \"type\": \"Microsoft.Web/sites/config\",\n \"name\": \"web\",\n \"existenceCondition\": {\n \"field\": \"Microsoft.Web/sites/config/siteAuthEnabled\",\n \"equals\": \"true\"\n }\n }\n }\n }\n}\n",
+  "parameters": {},
+  "classification": "Security",
+  "sub_classification": "Application",
+  "resource_type": [
+    "Web_Apps"
+  ],
+  "severity": "medium",
+  "type": [
+    "Cloud"
+  ],
+  "services": [
+    "Azure"
+  ],
+  "scope": "global",
+  "metadata": {},
+  "resources": [],
+  "is_temp": false,
+  "is_system_policy": false,
+  "recommendations": [
+    "Azure_Audit_WebApp_Authentication_Enabled"
+  ],
+  "uri": "policy/azure_policy/global/azure/compliance/others/lKMjK"
+}
