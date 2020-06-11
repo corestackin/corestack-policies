@@ -1,0 +1,10 @@
+{
+  "description": "Check AWS ELS logging check",
+  "severity": "high",
+  "classification": "Security",
+  "sub_classification": "Monitoring",
+  "resource_type": [
+    "Cluster"
+  ],
+  "uri": "policy/aws_config/global/guest/compliance/server/hJVPx"
+}
