@@ -1,0 +1,10 @@
+{
+  "description": "Check AWS SQS Encryption",
+  "severity": "high",
+  "classification": "Security",
+  "sub_classification": "Monitoring",
+  "resource_type": [
+    "Queue"
+  ],
+  "uri": "policy/aws_config/global/guest/compliance/server/RcqFZ"
+}
