@@ -1,0 +1,103 @@
+{
+  "policyType": "BuiltIn",
+  "mode": "Indexed",
+  "metadata": {
+    "policy_id": "/providers/Microsoft.Authorization/policyDefinitions/e56962a6-4747-49cd-b67b-bf8b01975c4c",
+    "policy_description": "This policy enables you to restrict the locations your organization can specify when deploying resources. Use to enforce your geo-compliance requirements. Excludes resource groups, Microsoft.AzureActiveDirectory/b2cDirectories, and resources that use the 'global' region.",
+    "classification": "Operation",
+    "sub_classification": "Standards",
+    "resource_type": [
+      "Subscription"
+    ],
+    "severity": "high",
+    "uri": "policy/azure_policy/global/azure/compliance/others/LgWbX"
+  },
+  "parameters": {
+    "listOfAllowedLocations": {
+      "type": "Array",
+      "allowedValues": [
+        "northcentralus",
+        "germanywestcentral",
+        "centralindia",
+        "uksouth",
+        "westusstage",
+        "asiapacific",
+        "japaneast",
+        "eastasiastage",
+        "germanynorth",
+        "westcentralus",
+        "brazilsouth",
+        "japan",
+        "southafricawest",
+        "uaecentral",
+        "canadaeast",
+        "norwayeast",
+        "francecentral",
+        "norwaywest",
+        "uaenorth",
+        "centralus",
+        "francesouth",
+        "centralusstage",
+        "southcentralusstage",
+        "eastus2",
+        "koreasouth",
+        "canadacentral",
+        "westindia",
+        "australiacentral2",
+        "southafricanorth",
+        "unitedstates",
+        "europe",
+        "switzerlandwest",
+        "westus2stage",
+        "australia",
+        "northeurope",
+        "koreacentral",
+        "westus2",
+        "southcentralus",
+        "eastus2euap",
+        "australiacentral",
+        "westeurope",
+        "westus",
+        "northcentralusstage",
+        "eastus2stage",
+        "australiasoutheast",
+        "southindia",
+        "eastus",
+        "ukwest",
+        "australiaeast",
+        "switzerlandnorth",
+        "uk",
+        "centraluseuap",
+        "japanwest",
+        "eastasia",
+        "southeastasia"
+      ],
+      "metadata": {
+        "description": "The list of locations that can be specified when deploying resources.",
+        "strongType": "location",
+        "displayName": "Allowed locations"
+      }
+    }
+  },
+  "policyRule": {
+    "if": {
+      "allOf": [
+        {
+          "field": "location",
+          "notIn": "[parameters('listOfAllowedLocations')]"
+        },
+        {
+          "field": "location",
+          "notEquals": "global"
+        },
+        {
+          "field": "type",
+          "notEquals": "Microsoft.AzureActiveDirectory/b2cDirectories"
+        }
+      ]
+    },
+    "then": {
+      "effect": "audit"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "Azure_Region_Violation",
+  "policy_id": "/providers/Microsoft.Authorization/policyDefinitions/e56962a6-4747-49cd-b67b-bf8b01975c4c",
+  "display_name": "Azure Region Violation",
+  "description": "This policy enables you to restrict the locations your organization can specify when deploying resources. Use to enforce your geo-compliance requirements. Excludes resource groups, Microsoft.AzureActiveDirectory/b2cDirectories, and resources that use the 'global' region.",
+  "category": "service",
+  "status": "active",
+  "content": "{\n \"policyType\": \"BuiltIn\",\n \"mode\": \"Indexed\",\n \"metadata\": {\n \"policy_id\": \"/providers/Microsoft.Authorization/policyDefinitions/e56962a6-4747-49cd-b67b-bf8b01975c4c\",\n \"policy_description\": \"This policy enables you to restrict the locations your organization can specify when deploying resources. Use to enforce your geo-compliance requirements. Excludes resource groups, Microsoft.AzureActiveDirectory/b2cDirectories, and resources that use the 'global' region.\",\n \"classification\": \"Operation\",\n \"sub_classification\": \"Standards\",\n \"resource_type\": [\n \"Subscription\"\n ],\n \"severity\": \"high\",\n \"uri\": \"policy/azure_policy/global/azure/compliance/others/LgWbX\"\n },\n \"parameters\": {\n \"listOfAllowedLocations\": {\n \"type\": \"Array\",\n \"allowedValues\": [\n \"northcentralus\",\n \"germanywestcentral\",\n \"centralindia\",\n \"uksouth\",\n \"westusstage\",\n \"asiapacific\",\n \"japaneast\",\n \"eastasiastage\",\n \"germanynorth\",\n \"westcentralus\",\n \"brazilsouth\",\n \"japan\",\n \"southafricawest\",\n \"uaecentral\",\n \"canadaeast\",\n \"norwayeast\",\n \"francecentral\",\n \"norwaywest\",\n \"uaenorth\",\n \"centralus\",\n \"francesouth\",\n \"centralusstage\",\n \"southcentralusstage\",\n \"eastus2\",\n \"koreasouth\",\n \"canadacentral\",\n \"westindia\",\n \"australiacentral2\",\n \"southafricanorth\",\n \"unitedstates\",\n \"europe\",\n \"switzerlandwest\",\n \"westus2stage\",\n \"australia\",\n \"northeurope\",\n \"koreacentral\",\n \"westus2\",\n \"southcentralus\",\n \"eastus2euap\",\n \"australiacentral\",\n \"westeurope\",\n \"westus\",\n \"northcentralusstage\",\n \"eastus2stage\",\n \"australiasoutheast\",\n \"southindia\",\n \"eastus\",\n \"ukwest\",\n \"australiaeast\",\n \"switzerlandnorth\",\n \"uk\",\n \"centraluseuap\",\n \"japanwest\",\n \"eastasia\",\n \"southeastasia\"\n ],\n \"metadata\": {\n \"description\": \"The list of locations that can be specified when deploying resources.\",\n \"strongType\": \"location\",\n \"displayName\": \"Allowed locations\"\n }\n }\n },\n \"policyRule\": {\n \"if\": {\n \"allOf\": [\n {\n \"field\": \"location\",\n \"notIn\": \"[parameters('listOfAllowedLocations')]\"\n },\n {\n \"field\": \"location\",\n \"notEquals\": \"global\"\n },\n {\n \"field\": \"type\",\n \"notEquals\": \"Microsoft.AzureActiveDirectory/b2cDirectories\"\n }\n ]\n },\n \"then\": {\n \"effect\": \"audit\"\n }\n }\n}\n",
+  "parameters": {},
+  "classification": "Operation",
+  "sub_classification": "Standards",
+  "resource_type": [
+    "Subscription"
+  ],
+  "severity": "high",
+  "type": [
+    "Cloud"
+  ],
+  "services": [
+    "Azure"
+  ],
+  "scope": "global",
+  "metadata": {},
+  "resources": [],
+  "is_temp": false,
+  "is_system_policy": false,
+  "recommendations": [
+    "Azure_Region_Violation"
+  ],
+  "uri": "policy/azure_policy/global/azure/compliance/others/LgWbX"
+}
