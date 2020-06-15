@@ -1,6 +1,6 @@
  
 {
-  "Version": "1.0",,
+  "Version": "1.0",
   "Parameters": {
     "RuleName": "SQS_ENCRYPTION_CHECK",
     "SourceRuntime": "python3.7",
