@@ -6,7 +6,7 @@
 name: CI
 on:
   push:
-    branches: [ master ]
+    branches: [ development ]
     paths:
     - 'AWS/**'
     - 'Azure/**'    
@@ -62,9 +62,10 @@ jobs:
       env:
         REPOUSERNAME: ${{ secrets.REPOUSER }}
         REPOKEY: ${{ secrets.REPOSECRET }}
-        COREHOST: ${{ secrets.APIHOST }}
+        COREHOST: ${{ secrets.DEVHOST }}
         COREUSER: ${{ secrets.DEVUSER }}
         COREPASS: ${{ secrets.DEVPASS }}
+        GITPASS: ${{ secrets.GIT_SECRET }}
       run: |
         ### Metadata generator for azure policies
         createazurepolicymeta()
@@ -125,6 +126,11 @@ jobs:
           do
             jq --arg var $var '.resource_type[.resource_type| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
           done
+          
+          #for var in `jq -r '.metadata.service_resources[]' "$fname/$file"_policy.json 2>/dev/null`
+          #do
+          #  jq --arg var $var '.service_resources[.service_resources| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
+          #done
 
           for var in `jq -r '.metadata.resources[]' "$fname/$file"_policy.json 2>/dev/null`
           do
@@ -226,7 +232,7 @@ jobs:
           cpath=`echo $cpath|sed 's/\//%2F/g'`
           fname=$GITHUB_WORKSPACE/$fname
           echo "Determined policy path: $fname"	
-          echo "Determined policy name: $file" | tee /tmp/mail.log
+          echo "Determined policy name: $file" 
           echo "Checking policy folder location ... "
           echo "$fname/$file"_policy.json
           
@@ -253,7 +259,7 @@ jobs:
           if [ -d $fname ]
           then
           echo "Uploading Policy ..."
-          sudo /usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/resource_loader.py http://$COREHOST:18080/v1 $COREUSER $COREPASS policy $fname/ A -s tenant --update | tee -a /tmp/mail.log
+          sudo /usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/resource_loader.py http://$COREHOST:18080/v1 $COREUSER $COREPASS policy $fname/ A --update
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           fi
@@ -272,10 +278,16 @@ jobs:
         
         # git add -A
         git diff-index --quiet HEAD || git commit -m "updated by github workflow"
-    - name: Push changes
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        git push https://$GITPASS@github.com/corestacklabs/core-policies.git HEAD:development
+#        git push origin HEAD:development
+#    - name: Push changes
+#      uses: ad-m/github-push-action@master
+#      with:
+#        github_token: ${{ secrets.GITHUB_TOKEN }}
+#    - uses: stefanzweifel/git-auto-commit-action@v4
+#      with:
+#        commit_message: Apply automatic changes
+#        push_options: '--force'
     - name: Send some mail
       uses: wadeww/send-email-action@master
       with:
