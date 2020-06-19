@@ -6,7 +6,7 @@
 name: CI
 on:
   push:
-    branches: [ development ]
+    branches: [ master ]
     paths:
     - 'AWS/**'
     - 'Azure/**'    
@@ -278,8 +278,8 @@ jobs:
         
         # git add -A
         git diff-index --quiet HEAD || git commit -m "updated by github workflow"
-        git push https://$GITPASS@github.com/corestacklabs/core-policies.git HEAD:development
-#        git push origin HEAD:development
+        git push https://$GITPASS@github.com/corestacklabs/core-policies.git HEAD:master
+#        git push origin HEAD:master
 #    - name: Push changes
 #      uses: ad-m/github-push-action@master
 #      with:
