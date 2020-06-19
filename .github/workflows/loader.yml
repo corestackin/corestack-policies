@@ -278,7 +278,7 @@ jobs:
         
         # git add -A
         git diff-index --quiet HEAD || git commit -m "updated by github workflow"
-        git push https://$GITPASS@github.com/corestacklabs/core-policies.git HEAD:master
+        git push https://$GITPASS@github.com/$GITHUB_REPOSITORY HEAD:master
 #        git push origin HEAD:master
 #    - name: Push changes
 #      uses: ad-m/github-push-action@master
