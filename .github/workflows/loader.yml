@@ -259,7 +259,7 @@ jobs:
           if [ -d $fname ]
           then
           echo "Uploading Policy ..."
-          sudo /usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/resource_loader.py http://$COREHOST:18080/v1 $COREUSER $COREPASS policy $fname/ A --update
+          sudo /usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/resource_loader.py http://$COREHOST:18080/v1 $COREUSER $COREPASS policy $fname/ A -s tenant --update
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           fi
@@ -286,18 +286,3 @@ jobs:
 #        github_token: ${{ secrets.GITHUB_TOKEN }}
 #    - uses: stefanzweifel/git-auto-commit-action@v4
 #      with:
-#        commit_message: Apply automatic changes
-#        push_options: '--force'
-    - name: Send some mail
-      uses: wadeww/send-email-action@master
-      with:
-        server_address: smtp.gmail.com
-        port: 465
-        username: corestacknotifications@gmail.com
-        password: ${{ secrets.GMAILPASS }}
-        subject: Workflow is ${{ job.status }} for the commit - ${{ github.event.head_commit.message }}
-        body: "- CI Build - Automated Workflow"
-        to: ${{ env.AUTHOR }}
-        from: notifications@github.com
-      if: env.AUTHOR != 'no'
-      continue-on-error: true
