@@ -66,6 +66,7 @@ jobs:
         COREUSER: ${{ secrets.DEVUSER }}
         COREPASS: ${{ secrets.DEVPASS }}
         GITPASS: ${{ secrets.GIT_SECRET }}
+        POLICYSCOPE: ${{ secrets.SCOPE }}
       run: |
         ### Metadata generator for azure policies
         createazurepolicymeta()
@@ -259,7 +260,7 @@ jobs:
           if [ -d $fname ]
           then
           echo "Uploading Policy ..."
-          sudo /usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/resource_loader.py http://$COREHOST:18080/v1 $COREUSER $COREPASS policy $fname/ A -s tenant --update
+          sudo /usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/resource_loader.py http://$COREHOST:18080/v1 $COREUSER $COREPASS policy $fname/ A -s $POLICYSCOPE -s tenant --update
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           fi
