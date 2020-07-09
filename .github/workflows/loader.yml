@@ -151,6 +151,7 @@ jobs:
           classify=`jq -r '.classification' "$fname"/csmetadata.json`
           subclassify=`jq -r '.sub_classification' "$fname"/csmetadata.json`
           sev=`jq -r '.severity' "$fname"/csmetadata.json`
+          rtype=`jq -r '.resource_type' "$fname"/csmetadata.json`
           uriid=`date | md5sum | cut -c 1-5`
           if [[ "`jq -r '.uri' "$fname"/csmetadata.json`" == "" || "`jq -r '.uri' "$fname"/csmetadata.json`" == "null" ]]
           then
@@ -191,7 +192,8 @@ jobs:
             "type": [
               "cloud"
             ],
-            "resource_type": [],
+            "service_resource": [],
+            "resource_type": '"\"$rtype\""',
             "severity": '"\"$sev\""',
             "scope": "global",
             "metadata": {
@@ -206,9 +208,9 @@ jobs:
             "uri": '"\"$uri\""'
           }' > $fname/$file.json
                   
-          for var in `jq -r '.resource_type[]' "$fname"/csmetadata.json 2>/dev/null`
+          for var in `jq -r '.service_resource[]' "$fname"/csmetadata.json 2>/dev/null`
           do
-                  jq --arg var $var '.resource_type[.resource_type| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
+                  jq --arg var $var '.service_resource[.service_resource| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
           done
 
           uri=`jq -r '.uri' $fname/$file.json`
