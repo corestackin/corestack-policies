@@ -79,6 +79,7 @@ jobs:
           classify=`jq -r '.metadata.classification' "$fname/$file"_policy.json`
           subclassify=`jq -r '.metadata.sub_classification' "$fname/$file"_policy.json`
           sev=`jq -r '.metadata.severity' "$fname/$file"_policy.json`
+          rtype=`jq -r '.metadata.resource_type' "$fname/$file"_policy.json`
           uriid=`date | md5sum | cut -c 1-5`
           if [ "`jq -r '.metadata.uri' "$fname/$file"_policy.json`" == "" ]
           then
@@ -103,7 +104,8 @@ jobs:
             "parameters": {},
             "classification": '"\"$classify\""',
             "sub_classification": '"\"$subclassify\""',
-            "resource_type": [],
+            "service_resource": [],
+            "resource_type": '"\"$rtype\""',
             "severity": '"\"$sev\""',
             "type": [
               "Cloud"
@@ -123,15 +125,15 @@ jobs:
           }
           ' > $fname/$file.json
 
-          for var in `jq -r '.metadata.resource_type[]' "$fname/$file"_policy.json 2>/dev/null`
-          do
-            jq --arg var $var '.resource_type[.resource_type| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-          done
-          
-          #for var in `jq -r '.metadata.service_resources[]' "$fname/$file"_policy.json 2>/dev/null`
+          #for var in `jq -r '.metadata.resource_type[]' "$fname/$file"_policy.json 2>/dev/null`
           #do
-          #  jq --arg var $var '.service_resources[.service_resources| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
+          #  jq --arg var $var '.resource_type[.resource_type| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
           #done
+          
+          for var in `jq -r '.metadata.service_resource[]' "$fname/$file"_policy.json 2>/dev/null`
+          do
+            jq --arg var $var '.service_resource[.service_resource| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
+          done
 
           for var in `jq -r '.metadata.resources[]' "$fname/$file"_policy.json 2>/dev/null`
           do
