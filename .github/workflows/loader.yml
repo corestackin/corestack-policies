@@ -239,8 +239,7 @@ jobs:
           echo "Determined policy path: $fname"	
           echo "Determined policy name: $file" 
           echo "Checking policy folder location ... "
-          echo "$fname/$file"_policy.json
-          
+
           if [ -f "$fname/$file"_policy.json ]
           then
             echo "Policy file detected"
