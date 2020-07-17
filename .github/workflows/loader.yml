@@ -278,6 +278,10 @@ jobs:
           then
             git add "$fname"/csmetadata.json   
           fi
+          if [[ -f "$fname/$file".json && "$ptype" == "config" || "$ptype" == "managed" || "$ptype" == "custom" ]]
+          then
+            git add "$fname/$file".json         
+          fi
         done
         
         # git add -A
