@@ -157,7 +157,7 @@ jobs:
           uriid=`date | md5sum | cut -c 1-5`
           if [[ "`jq -r '.uri' "$fname"/csmetadata.json`" == "" || "`jq -r '.uri' "$fname"/csmetadata.json`" == "null" ]]
           then
-                  uri="policy/aws_config/global/guest/compliance/server/$uriid"
+                  uri="policy/aws_config/global/aws/compliance/others/$uriid"
           else
                   uri=`jq -r '.uri' "$fname"/csmetadata.json`
           fi
