@@ -162,7 +162,7 @@ jobs:
           else
                   if [ "`jq -r '.uri' "$fname"/csmetadata.json|awk -F/ '{print $7}'`" == "" ]
                   then
-                  uriprefix=`jq -r '.uri' "$fname"/csmetadata.json`
+                  uriprefix=`jq -r '.uri' "$fname"/csmetadata.json|sed s'/[/]$//'`
                   uri=$uriprefix/$uriid
                   else
                   uri=`jq -r '.uri' "$fname"/csmetadata.json`
