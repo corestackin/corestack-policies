@@ -35,6 +35,7 @@ jobs:
         fi
     - name: Install pre-requisites
       run: |
+        sudo apt update -y
         sudo apt install jsonlint jq python2.7-minimal python-pip python-yaml -y
         sudo pip install httplib2 pandas
     - name: Get list of modified/added files
@@ -159,7 +160,13 @@ jobs:
           then
                   uri="policy/aws_config/global/aws/compliance/others/$uriid"
           else
+                  if [ "`jq -r '.uri' "$fname"/csmetadata.json|awk -F/ '{print $7}'`" == "" ]
+                  then
+                  uriprefix=`jq -r '.uri' "$fname"/csmetadata.json`
+                  uri=$uriprefix/$uriid
+                  else
                   uri=`jq -r '.uri' "$fname"/csmetadata.json`
+                  fi
           fi
 
           if [ "$poldesc" == "" ]
@@ -268,25 +275,32 @@ jobs:
           git config --local user.name "GitHub Action"
           fi
           
+          added=false
           # Add changed files back to git
           if [[ -f "$fname/$file"_policy.json && -f "$fname/$file".json && "$ptype" == "azurepolicy" ]]
           then
             git add "$fname/$file"_policy.json
-            git add "$fname/$file".json         
+            git add "$fname/$file".json
+            added=true         
           fi
           if [ -f "$fname"/csmetadata.json ]
           then
-            git add "$fname"/csmetadata.json   
+            git add "$fname"/csmetadata.json
+            added=true   
           fi
           if [[ -f "$fname/$file".json && "$ptype" == "config" || "$ptype" == "managed" || "$ptype" == "custom" ]]
           then
-            git add "$fname/$file".json         
+            git add "$fname/$file".json
+            added=true         
           fi
         done
         
+        if [ "$added" == "true" ]
+        then
         # git add -A
         git diff-index --quiet HEAD || git commit -m "updated by github workflow"
         git push https://$GITPASS@github.com/$GITHUB_REPOSITORY HEAD:master
+        fi
 #        git push origin HEAD:master
 #    - name: Push changes
 #      uses: ad-m/github-push-action@master
