@@ -150,7 +150,8 @@ jobs:
         {
           name=`echo $file`
           dname=`echo $file|sed 's/_/ /g'`
-          poldesc=`jq -r '.description' "$fname"/csmetadata.json`
+          poldesc=`jq -r '.policy_description' "$fname"/csmetadata.json 2>/dev/null`
+          rdesc=`jq -r '.recommendation_description' "$fname"/csmetadata.json 2>/dev/null`
           classify=`jq -r '.classification' "$fname"/csmetadata.json`
           subclassify=`jq -r '.sub_classification' "$fname"/csmetadata.json`
           sev=`jq -r '.severity' "$fname"/csmetadata.json`
@@ -187,6 +188,7 @@ jobs:
             "description": '"\"$poldesc\""',
             "category": "service",
             "status": "active",
+            "config_type": '"\"$ptype\""',
             "content_type": "git",
             "content_url": '"\"https://github.com/$GITHUB_REPOSITORY\""',
             "content_path": '"\"$polpath\""',
@@ -211,9 +213,11 @@ jobs:
             "is_temp": false,
             "is_system_policy": false,
             "engine_type": "aws_config",
-            "recommendations": [
-              '"\"$name\""'
-            ],
+            "recommendations": {
+              "name": '"\"$name\""',
+              "description": '"\"$rdesc\""',
+              "actions": []
+            },
             "uri": '"\"$uri\""'
           }' > $fname/$file.json
                   
@@ -222,6 +226,11 @@ jobs:
                   jq --arg var $var '.service_resource[.service_resource| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
           done
 
+          for var in `jq -r '.actions[]' "$fname"/csmetadata.json 2>/dev/null`
+          do
+                  jq --arg var $var '.recommendations.actions[.recommendations.actions| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
+          done
+          
           uri=`jq -r '.uri' $fname/$file.json`
           jq --arg var $uri '.uri = $var' "$fname"/csmetadata.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json "$fname"/csmetadata.json
         }
