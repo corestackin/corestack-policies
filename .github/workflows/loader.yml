@@ -213,7 +213,7 @@ jobs:
             "is_temp": false,
             "is_system_policy": false,
             "engine_type": "aws_config",
-            "recommendations": {
+            "recommendation": {
               "name": '"\"$name\""',
               "description": '"\"$rdesc\""',
               "actions": []
