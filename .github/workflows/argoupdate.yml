@@ -25,7 +25,21 @@ jobs:
         run: |
           latest_tag="v0.0.9"
           echo "ltag=$latest_tag" >> $GITHUB_ENV
-      # Runs a set of commands using the runners shell
       - name: Run a multi-line script
         run: |
-          echo "new tag version tag-${{ env.ltag }}"
+          echo "new tag version tag-${{ env.ltag }}"        
+      - uses: actions/checkout@v1
+        with:
+          repository: karthick-kk/argo-githubrunner
+          token: ${{ secrets.GITKEN }}
+      - name: Update deployment image version of k8
+        run: |
+          sed -i 's/\(github-runner:\).*/\1'"$ltag"'/g' runner.yaml
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Add changes" -a
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITKEN }}
+          branch: ${{ github.ref }}
