@@ -42,4 +42,5 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITKEN }}
+          repository: karthick-kk/argo-githubrunner
           branch: ${{ github.ref }}
