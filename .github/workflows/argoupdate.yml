@@ -22,7 +22,7 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
       - name: Export tag version
-        shell: |
+        run: |
           latest_tag="v0.0.9"
           echo "::set-env name=ltag::$latest_tag"
       # Runs a set of commands using the runners shell
