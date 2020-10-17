@@ -28,7 +28,7 @@ jobs:
       - name: Run a multi-line script
         run: |
           echo "new tag version tag-${{ env.ltag }}"        
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@master
         with:
           repository: karthick-kk/argo-githubrunner
           token: ${{ secrets.GITKEN }}
