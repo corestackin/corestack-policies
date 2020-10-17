@@ -25,9 +25,10 @@ jobs:
         run: |
           latest_tag="v0.0.9"
           echo "::set-env name=ltag::$latest_tag"
+          echo "action_state=yellow" >> $GITHUB_ENV
       # Runs a set of commands using the runners shell
       - name: Run a multi-line script
         run: |
           echo Add other actions to build,
           echo test, and deploy your project.
-          echo "new tag version tag-${{ env.ltag }}"
+          echo "new tag version tag-${{ env.action_state }}"
