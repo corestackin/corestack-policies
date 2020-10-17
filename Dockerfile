@@ -2,7 +2,7 @@ FROM debian:buster-slim
 
 ENV RUNNER_NAME "runner"
 ENV GITHUB_PAT ""
-ENV GITHUB_OWNER "xxxxx"
+ENV GITHUB_OWNER "xxxx"
 ENV GITHUB_REPOSITORY ""
 ENV RUNNER_WORKDIR "_work"
 ENV RUNNER_LABELS "self-hosted"
