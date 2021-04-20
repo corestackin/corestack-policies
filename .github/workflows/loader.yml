@@ -31,7 +31,7 @@ jobs:
             echo "AUTHOR=$AUTHOR" >> $GITHUB_ENV
           else
             export AUTHOR
-            echo "AUTHOR=$AUTHOR" >> $GITHUB_ENV            
+            echo "AUTHOR=$AUTHOR" >> $GITHUB_ENV
           fi
       - name: Install pre-requisites
         run: |
