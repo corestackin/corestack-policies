@@ -10,6 +10,7 @@ on:
     paths:
       - 'AWS/**'
       - 'Azure/**'
+      - 'GCP/**'
 jobs:
   build:
     # Skip running this workflow if commit message has "***NO_CI***" or "[skip ci]" or "[ci skip]"
@@ -147,6 +148,78 @@ jobs:
             jq --arg var $uri '.metadata.uri = $var' "$fname/$file"_policy.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json "$fname/$file"_policy.json
           }
 
+          ### Metadata generator for gcp policies
+          creategcppolicymetadata()
+          {
+            contentstring=`/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/json2string.py "$fname/$file"_policy.json`
+            name=`echo $file`
+            dname=`echo $file|sed 's/_/ /g'`
+            poldesc=`jq -r '.metadata.policy_description' "$fname/$file"_policy.json`
+            classify=`jq -r '.metadata.classification' "$fname/$file"_policy.json`
+            subclassify=`jq -r '.metadata.sub_classification' "$fname/$file"_policy.json`
+            sev=`jq -r '.metadata.severity' "$fname/$file"_policy.json`
+            rtype=`jq -r '.metadata.resource_type' "$fname/$file"_policy.json`
+            serviceresource=`jq -r '.metadata.service_resource' "$fname/$file"_policy.json`
+            uriid=`date | md5sum | cut -c 1-5`
+            if [ "`jq -r '.metadata.uri' "$fname/$file"_policy.json`" == "" ]
+            then
+              uri="policy/gcp_policy/global/gcp/compliance/vm/$uriid"
+            else
+              uri=`jq -r '.metadata.uri' "$fname/$file"_policy.json`
+            fi
+
+            if [ "$poldesc" == "" ]
+            then
+              poldesc=$dname
+            fi
+
+            echo '{
+              "name": '"\"$name\""',
+              "display_name": '"\"$dname\""',
+              "description": '"\"$poldesc\""',
+              "category": "service",
+              "status": "active",
+              "content": '$contentstring',
+              "parameters": {},
+              "classification": '"\"$classify\""',
+              "sub_classification": '"\"$subclassify\""',
+              "resource_type": '"\"$rtype\""',
+              "service_resource": '"\"$serviceresource\""',
+              "severity": '"\"$sev\""',
+              "type": [
+                "Cloud"
+              ],
+              "services": [
+                "GCP"
+              ],
+              "scope": "global",
+              "metadata": {},
+              "resources": [],
+              "is_temp": false,
+              "is_system_policy": false,
+              "uri": '"\"$uri\""'
+            }
+            ' > $fname/$file.json
+
+            #for var in `jq -r '.metadata.resource_type[]' "$fname/$file"_policy.json 2>/dev/null`
+            #do
+            #  jq --arg var $var '.resource_type[.resource_type| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
+            #done
+
+            for var in `jq -r '.metadata.service_resource[]' "$fname/$file"_policy.json 2>/dev/null`
+            do
+              jq --arg var $var '.service_resource[.service_resource| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
+            done
+
+            for var in `jq -r '.metadata.resources[]' "$fname/$file"_policy.json 2>/dev/null`
+            do
+                    jq --arg var $var '.resources[.resources| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
+            done
+
+            uri=`jq -r '.uri' $fname/$file.json`
+            jq --arg var $uri '.metadata.uri = $var' "$fname/$file"_policy.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json "$fname/$file"_policy.json
+          }
+          
           ### Metadata generator for aws config policies
           createawspolicymeta()
           {
@@ -265,6 +338,16 @@ jobs:
               then
                 echo "Detected azure policy"
                 createazurepolicymeta
+              fi
+            fi
+
+            if [ -f "$fname/$file"_policy.json ]
+            then
+              echo "Policy file detected"
+              if [ "$ptype" == "gcp" ]
+              then
+                echo "Detected gcp policy"
+                creategcppolicymetadata
               fi
             fi
 
