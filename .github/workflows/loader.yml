@@ -184,7 +184,7 @@ jobs:
               "classification": '"\"$classify\""',
               "sub_classification": '"\"$subclassify\""',
               "resource_type": '"\"$rtype\""',
-              "service_resource": '"\"$serviceresource\""',
+              "service_resource": '"$serviceresource"',
               "severity": '"\"$sev\""',
               "type": [
                 "Cloud"
