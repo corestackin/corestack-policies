@@ -1,8 +1,6 @@
 ##### This is a workflow to load policies to corestack marketplace
 # Author: Karthick <karthick.k@corestack.io>
 #
-
-
 name: CI
 on:
   push:
@@ -89,12 +87,10 @@ jobs:
             else
               uri=`jq -r '.metadata.uri' "$fname/$file"_policy.json`
             fi
-
             if [ "$poldesc" == "" ]
             then
               poldesc=$dname
             fi
-
             echo '{
               "name": '"\"$name\""',
               "policy_id": '"\"$polid\""',
@@ -128,26 +124,21 @@ jobs:
               "uri": '"\"$uri\""'
             }
             ' > $fname/$file.json
-
             #for var in `jq -r '.metadata.resource_type[]' "$fname/$file"_policy.json 2>/dev/null`
             #do
             #  jq --arg var $var '.resource_type[.resource_type| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
             #done
-
             for var in `jq -r '.metadata.service_resource[]' "$fname/$file"_policy.json 2>/dev/null`
             do
               jq --arg var $var '.service_resource[.service_resource| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
             done
-
             for var in `jq -r '.metadata.resources[]' "$fname/$file"_policy.json 2>/dev/null`
             do
                     jq --arg var $var '.resources[.resources| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
             done
-
             uri=`jq -r '.uri' $fname/$file.json`
             jq --arg var $uri '.metadata.uri = $var' "$fname/$file"_policy.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json "$fname/$file"_policy.json
           }
-
           ### Metadata generator for gcp policies
           creategcppolicymetadata()
           {
@@ -167,12 +158,10 @@ jobs:
             else
               uri=`jq -r '.metadata.uri' "$fname/$file"_policy.json`
             fi
-
             if [ "$poldesc" == "" ]
             then
               poldesc=$dname
             fi
-
             echo '{
               "name": '"\"$name\""',
               "display_name": '"\"$dname\""',
@@ -197,29 +186,25 @@ jobs:
               "resources": [],
               "is_temp": false,
               "is_system_policy": false,
+              "engine_type": "gcp_policy",
               "uri": '"\"$uri\""'
             }
             ' > $fname/$file.json
-
             #for var in `jq -r '.metadata.resource_type[]' "$fname/$file"_policy.json 2>/dev/null`
             #do
             #  jq --arg var $var '.resource_type[.resource_type| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
             #done
-
             for var in `jq -r '.metadata.service_resource[]' "$fname/$file"_policy.json 2>/dev/null`
             do
               jq --arg var $var '.service_resource[.service_resource| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
             done
-
             for var in `jq -r '.metadata.resources[]' "$fname/$file"_policy.json 2>/dev/null`
             do
                     jq --arg var $var '.resources[.resources| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
             done
-
             uri=`jq -r '.uri' $fname/$file.json`
             jq --arg var $uri '.metadata.uri = $var' "$fname/$file"_policy.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json "$fname/$file"_policy.json
           }
-          
           ### Metadata generator for aws config policies
           createawspolicymeta()
           {
@@ -244,19 +229,16 @@ jobs:
                     uri=`jq -r '.uri' "$fname"/csmetadata.json`
                     fi
             fi
-
             if [ "$poldesc" == "" ]
             then
                     poldesc=$dname
             fi
-
             if [ "$ptype" == "managed" ]
             then
               polpath=AWS/config/managed/$file
             else
               polpath=AWS/config/custom/$file
             fi
-
             echo '{
               "name": '"\"$name\""',
               "display_name": '"\"$dname\""',
@@ -295,27 +277,22 @@ jobs:
               },
               "uri": '"\"$uri\""'
             }' > $fname/$file.json
-
             for var in `jq -r '.service_resource[]' "$fname"/csmetadata.json 2>/dev/null`
             do
                     jq --arg var $var '.service_resource[.service_resource| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
             done
-
             for var in `jq -r '.actions[]' "$fname"/csmetadata.json 2>/dev/null`
             do
                     jq --arg var $var '.recommendations.actions[.recommendations.actions| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
             done
-
             uri=`jq -r '.uri' $fname/$file.json`
             jq --arg var $uri '.uri = $var' "$fname"/csmetadata.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json "$fname"/csmetadata.json
           }
-
           # Determine added/updated policies
           for file in `cat $HOME/files_added`
           do
             echo $file|rev |cut -d "/" -f 2- | rev
           done|uniq > $HOME/policies_added
-
           # Determine policy type and call appropriate metadata generator function
           cd $GITHUB_WORKSPACE
           for fname in `cat $HOME/policies_added|grep -v .github|grep -v README.md`
@@ -330,7 +307,6 @@ jobs:
             echo "Determined policy path: $fname"
             echo "Determined policy name: $file"
             echo "Checking policy folder location ... "
-
             if [ -f "$fname/$file"_policy.json ]
             then
               echo "Policy file detected"
@@ -340,7 +316,6 @@ jobs:
                 createazurepolicymeta
               fi
             fi
-
             if [ -f "$fname/$file"_policy.json ]
             then
               echo "Policy file detected"
@@ -350,7 +325,6 @@ jobs:
                 creategcppolicymetadata
               fi
             fi
-
             if [[ "$ptype" == "config" || "$ptype" == "managed" || "$ptype" == "custom" ]]
             then
               echo "Detected aws policy"
@@ -359,7 +333,6 @@ jobs:
                 createawspolicymeta
               fi
             fi
-
             # Start to upload the policy
             if [ -d $fname ]
             then
@@ -368,10 +341,9 @@ jobs:
             git config --local user.email "action@github.com"
             git config --local user.name "GitHub Action"
             fi
-
             added=false
             # Add changed files back to git
-            if [[ -f "$fname/$file"_policy.json && -f "$fname/$file".json && "$ptype" == "azurepolicy" ]]
+            if [[ -f "$fname/$file"_policy.json && -f "$fname/$file".json && "$ptype" == "azurepolicy" || -f "$fname/$file"_policy.json && -f "$fname/$file".json && "$ptype" == "gcp" ]]
             then
               git add "$fname/$file"_policy.json
               git add "$fname/$file".json
@@ -388,7 +360,6 @@ jobs:
               added=true
             fi
           done
-
           if [ "$added" == "true" ]
           then
           # git add -A
@@ -400,5 +371,3 @@ jobs:
       #      uses: ad-m/github-push-action@master
       #      with:
       #        github_token: ${{ secrets.GITHUB_TOKEN }}
-      #    - uses: stefanzweifel/git-auto-commit-action@v4
-      #      with:
