@@ -211,18 +211,24 @@ jobs:
             contentstring=`/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/json2string.py "$fname/$file"_policy.json`
             name=`echo $file`
             dname=`echo $file|sed 's/_/ /g'`
-            poldesc=`jq -r '.metadata.policy_description' "$fname/$file"_policy.json`
-            classify=`jq -r '.metadata.classification' "$fname/$file"_policy.json`
-            subclassify=`jq -r '.metadata.sub_classification' "$fname/$file"_policy.json`
-            sev=`jq -r '.metadata.severity' "$fname/$file"_policy.json`
-            rtype=`jq -r '.metadata.resource_type' "$fname/$file"_policy.json`
-            serviceresource=`jq -r '.metadata.service_resource' "$fname/$file"_policy.json`
+            poldesc=`jq -r '.policy_description' "$fname"/csmetadata.json 2>/dev/null`
+            classify=`jq -r '.classification' "$fname"/csmetadata.json`
+            subclassify=`jq -r '.sub_classification' "$fname"/csmetadata.json`
+            sev=`jq -r '.severity' "$fname"/csmetadata.json`
+            rtype=`jq -r '.resource_type' "$fname"/csmetadata.json`
+            serviceresource=`jq -r '.service_resource' "$fname"/csmetadata.json`
             uriid=`date | md5sum | cut -c 1-5`
-            if [ "`jq -r '.metadata.uri' "$fname/$file"_policy.json`" == "" ]
+            if [[ "`jq -r '.uri' "$fname"/csmetadata.json`" == "" || "`jq -r '.uri' "$fname"/csmetadata.json`" == "null" ]]
             then
               uri="policy/corestack_policy/global/aws/operation/instances/$uriid"
             else
-              uri=`jq -r '.metadata.uri' "$fname/$file"_policy.json`
+              if [ "`jq -r '.uri' "$fname"/csmetadata.json|awk -F/ '{print $7}'`" == "" ]
+              then
+                uriprefix=`jq -r '.uri' "$fname"/csmetadata.json|sed s'/[/]$//'`
+                uri=$uriprefix/$uriid
+              else
+                uri=`jq -r '.uri' "$fname"/csmetadata.json`
+              fi
             fi
             if [ "$poldesc" == "" ]
             then
@@ -253,6 +259,11 @@ jobs:
               "is_temp": false,
               "is_system_policy": false,
               "engine_type": "corestack_policy",
+              "recommendation": {
+                            "name": '"\"$name\""',
+                            "description": '"\"$poldesc\""',
+                            "actions": []
+                          },
               "uri": '"\"$uri\""'
             }
             ' > $fname/$file.json
@@ -269,7 +280,6 @@ jobs:
                     jq --arg var $var '.resources[.resources| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
             done
             uri=`jq -r '.uri' $fname/$file.json`
-            jq --arg var $uri '.metadata.uri = $var' "$fname/$file"_policy.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json "$fname/$file"_policy.json
           }
           ### Metadata generator for aws config policies
           createawspolicymeta()
