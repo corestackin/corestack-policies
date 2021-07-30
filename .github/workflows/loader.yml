@@ -291,7 +291,7 @@ jobs:
             classify=`jq -r '.classification' "$fname"/csmetadata.json`
             subclassify=`jq -r '.sub_classification' "$fname"/csmetadata.json`
             sev=`jq -r '.severity' "$fname"/csmetadata.json`
-            rtype=`jq -r '.resource_type' "$fname"/csmetadata.json`
+            ip_args=`jq -r '.input_args' "$fname"/csmetadata.json`
             uriid=`date | md5sum | cut -c 1-5`
             if [[ "`jq -r '.uri' "$fname"/csmetadata.json`" == "" || "`jq -r '.uri' "$fname"/csmetadata.json`" == "null" ]]
             then
@@ -349,7 +349,21 @@ jobs:
               "recommendation": {
                 "name": '"\"$name\""',
                 "description": '"\"$rdesc\""',
-                "actions": []
+                "actions": [
+                    {
+                      "name": '"\"$name\""',
+                      "resource_level": "yes",
+                      "action_type": "template",
+                      "action_resource_name": '"\"$name\""',
+                      "preexecute_required": false
+
+                    }
+                ],
+                "action_details": {
+                  '"\"$name\""': {
+                    "input_args": '"$ip_args"'
+                  }
+                }
               },
               "uri": '"\"$uri\""'
             }' > $fname/$file.json
