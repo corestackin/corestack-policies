@@ -294,7 +294,6 @@ jobs:
             terms=`jq -r '.terms_and_conditions' "$fname"/csmetadata.json`
             arn=`jq -r '.action_resource_name' "$fname"/csmetadata.json`
             ip_args=`jq -r '.input_args' "$fname"/csmetadata.json`
-            
             uriid=`date | md5sum | cut -c 1-5`
             if [[ "`jq -r '.uri' "$fname"/csmetadata.json`" == "" || "`jq -r '.uri' "$fname"/csmetadata.json`" == "null" ]]
             then
