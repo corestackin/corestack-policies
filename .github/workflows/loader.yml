@@ -80,6 +80,8 @@ jobs:
             subclassify=`jq -r '.metadata.sub_classification' "$fname/$file"_policy.json`
             sev=`jq -r '.metadata.severity' "$fname/$file"_policy.json`
             rtype=`jq -r '.metadata.resource_type' "$fname/$file"_policy.json`
+            rec_name=`jq -r '.metadata.recommendation_name' "$fname/$file"_policy.json`
+            params_dict=`jq -r '.metadata.params_dict' "$fname/$file"_policy.json`
             uriid=`date | md5sum | cut -c 1-5`
             if [ "`jq -r '.metadata.uri' "$fname/$file"_policy.json`" == "" ]
             then
@@ -91,6 +93,14 @@ jobs:
             then
               poldesc=$dname
             fi
+            if [ "$rec_name" == "" ]
+            then
+              rec_name=$name
+            fi
+            if [ "$params_dict" == "" ]
+            then
+              params_dict={}
+            fi
             echo '{
               "name": '"\"$name\""',
               "policy_id": '"\"$polid\""',
@@ -99,7 +109,7 @@ jobs:
               "category": "service",
               "status": "active",
               "content": '$contentstring',
-              "parameters": {},
+              "parameters": '"\"$params_dict\""',
               "classification": '"\"$classify\""',
               "sub_classification": '"\"$subclassify\""',
               "service_resource": [],
@@ -117,7 +127,7 @@ jobs:
               "is_temp": false,
               "is_system_policy": false,
               "recommendation": {
-                            "name": '"\"$name\""',
+                            "name": '"\"$rec_name\""',
                             "description": '"\"$poldesc\""',
                             "actions": []
                           },
@@ -151,6 +161,7 @@ jobs:
             sev=`jq -r '.metadata.severity' "$fname/$file"_policy.json`
             rtype=`jq -r '.metadata.resource_type' "$fname/$file"_policy.json`
             serviceresource=`jq -r '.metadata.service_resource' "$fname/$file"_policy.json`
+            params_dict=`jq -r '.metadata.params_dict' "$fname/$file"_policy.json`
             uriid=`date | md5sum | cut -c 1-5`
             if [ "`jq -r '.metadata.uri' "$fname/$file"_policy.json`" == "" ]
             then
@@ -162,6 +173,10 @@ jobs:
             then
               poldesc=$dname
             fi
+            if [ "$params_dict" == "" ]
+            then
+              params_dict={}
+            fi
             echo '{
               "name": '"\"$name\""',
               "display_name": '"\"$dname\""',
@@ -169,7 +184,7 @@ jobs:
               "category": "service",
               "status": "active",
               "content": '$contentstring',
-              "parameters": {},
+              "parameters": '"\"$params_dict\""',
               "classification": '"\"$classify\""',
               "sub_classification": '"\"$subclassify\""',
               "resource_type": '"\"$rtype\""',
@@ -217,6 +232,8 @@ jobs:
             sev=`jq -r '.severity' "$fname"/csmetadata.json`
             rtype=`jq -r '.resource_type' "$fname"/csmetadata.json`
             serviceresource=`jq -r '.service_resource' "$fname"/csmetadata.json`
+            params_dict=`jq -r '.metadata.params_dict' "$fname/$file"_policy.json`
+            rec_name=`jq -r '.metadata.recommendation_name' "$fname/$file"_policy.json`
             uriid=`date | md5sum | cut -c 1-5`
             if [[ "`jq -r '.uri' "$fname"/csmetadata.json`" == "" || "`jq -r '.uri' "$fname"/csmetadata.json`" == "null" ]]
             then
@@ -234,6 +251,14 @@ jobs:
             then
               poldesc=$dname
             fi
+            if [ "$rec_name" == "" ]
+            then
+              rec_name=$name
+            fi
+            if [ "$params_dict" == "" ]
+            then
+              params_dict={}
+            fi
             echo '{
               "name": '"\"$name\""',
               "display_name": '"\"$dname\""',
@@ -241,7 +266,7 @@ jobs:
               "category": "service",
               "status": "active",
               "content": '$contentstring',
-              "parameters": {},
+              "parameters": '"\"$params_dict\""',
               "classification": '"\"$classify\""',
               "sub_classification": '"\"$subclassify\""',
               "resource_type": '"\"$rtype\""',
@@ -260,7 +285,7 @@ jobs:
               "is_system_policy": false,
               "engine_type": "corestack_policy",
               "recommendation": {
-                            "name": '"\"$name\""',
+                            "name": '"\"$rec_name\""',
                             "description": '"\"$poldesc\""',
                             "actions": []
                           },
@@ -294,6 +319,7 @@ jobs:
             terms=`jq -r '.terms_and_conditions' "$fname"/csmetadata.json`
             arn=`jq -r '.action_resource_name' "$fname"/csmetadata.json`
             ip_args=`jq -r '.input_args' "$fname"/csmetadata.json`
+            rec_name=`jq -r '.metadata.recommendation_name' "$fname/$file"_policy.json`
             uriid=`date | md5sum | cut -c 1-5`
             if [[ "`jq -r '.uri' "$fname"/csmetadata.json`" == "" || "`jq -r '.uri' "$fname"/csmetadata.json`" == "null" ]]
             then
@@ -316,6 +342,10 @@ jobs:
               polpath=AWS/config/managed/$file
             else
               polpath=AWS/config/custom/$file
+            fi
+            if [ "$rec_name" == "" ]
+            then
+              rec_name=$name
             fi
             echo '{
               "name": '"\"$name\""',
@@ -349,7 +379,7 @@ jobs:
               "is_system_policy": false,
               "engine_type": "aws_config",
               "recommendation": {
-                "name": '"\"$name\""',
+                "name": '"\"$rec_name\""',
                 "description": '"\"$rdesc\""',
                 "actions": [
                     {
