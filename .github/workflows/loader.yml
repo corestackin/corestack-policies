@@ -316,9 +316,6 @@ jobs:
             classify=`jq -r '.classification' "$fname"/csmetadata.json`
             subclassify=`jq -r '.sub_classification' "$fname"/csmetadata.json`
             sev=`jq -r '.severity' "$fname"/csmetadata.json`
-            terms=`jq -r '.terms_and_conditions' "$fname"/csmetadata.json`
-            arn=`jq -r '.action_resource_name' "$fname"/csmetadata.json`
-            ip_args=`jq -r '.input_args' "$fname"/csmetadata.json`
             rec_name=`jq -r '.metadata.recommendation_name' "$fname/$file"_policy.json`
             uriid=`date | md5sum | cut -c 1-5`
             if [[ "`jq -r '.uri' "$fname"/csmetadata.json`" == "" || "`jq -r '.uri' "$fname"/csmetadata.json`" == "null" ]]
@@ -381,22 +378,7 @@ jobs:
               "recommendation": {
                 "name": '"\"$rec_name\""',
                 "description": '"\"$rdesc\""',
-                "actions": [
-                    {
-                      "name": '"\"$name\""',
-                      "terms_and_conditions": '"\"$terms\""',
-                      "resource_level": "yes",
-                      "action_type": "template",                      
-                      "action_resource_name": '"\"$arn\""',
-                      "preexecute_required": false
-
-                    }
-                ],
-                "action_details": {
-                  '"\"$name\""': {
-                    "input_args": '"$ip_args"'
-                  }
-                }
+                "actions": []
               },
               "uri": '"\"$uri\""'
             }' > $fname/$file.json
