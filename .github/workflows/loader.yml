@@ -37,6 +37,7 @@ jobs:
           sudo apt update -y
           sudo apt install jsonlint jq python2.7-minimal python-pip python-yaml -y
           sudo pip install httplib2 pandas
+          sudo pip install requests==2.21.0
       - name: Get list of modified/added files
         shell: bash
         run: |
@@ -439,7 +440,7 @@ jobs:
             if [ -f "$fname/$file"_policy.json ]
             then
               echo "Policy file detected"
-              if [ "$ptype" == "corestack" ]
+              if [ "$ptype" == "managed" ]
               then
                 echo "Detected corestack policy"
                 createcorestackpolicymetadata
@@ -447,6 +448,7 @@ jobs:
             fi
             if [[ "$ptype" == "config" || "$ptype" == "managed" || "$ptype" == "custom" ]]
             then
+              echo $ptype
               echo "Detected aws policy"
               if [ -f "$fname"/parameters.json ]
               then
