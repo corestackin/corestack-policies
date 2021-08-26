@@ -323,7 +323,6 @@ jobs:
             classify=`jq -r '.classification' "$fname"/csmetadata.json`
             subclassify=`jq -r '.sub_classification' "$fname"/csmetadata.json`
             sev=`jq -r '.severity' "$fname"/csmetadata.json`
-            rec_name=`jq -r '.metadata.recommendation_name' "$fname/$file"_policy.json`
             uriid=`date | md5sum | cut -c 1-5`
             if [[ "`jq -r '.uri' "$fname"/csmetadata.json`" == "" || "`jq -r '.uri' "$fname"/csmetadata.json`" == "null" ]]
             then
@@ -339,17 +338,13 @@ jobs:
             fi
             if [ "$poldesc" == "" ]
             then
-                    poldesc=$dname
+              poldesc=$dname
             fi
             if [ "$ptype" == "managed" ]
             then
               polpath=AWS/config/managed/$file
             else
               polpath=AWS/config/custom/$file
-            fi
-            if [ "$rec_name" == "" ]
-            then
-              rec_name=$name
             fi
             echo '{
               "name": '"\"$name\""',
@@ -361,9 +356,9 @@ jobs:
               "content_type": "git",
               "content_url": '"\"https://github.com/$GITHUB_REPOSITORY\""',
               "content_path": '"\"$polpath\""',
-              "content_password_or_key": '"\"$REPOKEY\""',
+              "content_password_or_key": "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",
               "content_branch": '"\"${{ steps.extract_branch.outputs.branch }}\""',
-              "content_username": '"\"$REPOUSERNAME\""',
+              "content_username": "cscorestack",
               "classification": '"\"$classify\""',
               "sub_classification": '"\"$subclassify\""',
               "services": [
@@ -383,7 +378,7 @@ jobs:
               "is_system_policy": false,
               "engine_type": "aws_config",
               "recommendation": {
-                "name": '"\"$rec_name\""',
+                "name": '"\"$name\""',
                 "description": '"\"$rdesc\""',
                 "actions": []
               },
@@ -446,11 +441,10 @@ jobs:
                 createcorestackpolicymetadata
               fi
             fi
-            if [[ "$ptype" == "config" || "$ptype" == "managed" || "$ptype" == "custom" ]]
+            if [ -f "$fname"/parameters.json ]
             then
-              echo $ptype
+              if [[ "$ptype" == "config" || "$ptype" == "managed" || "$ptype" == "custom" ]]
               echo "Detected aws policy"
-              if [ -f "$fname"/parameters.json ]
               then
                 createawspolicymeta
               fi
