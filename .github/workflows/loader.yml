@@ -356,7 +356,7 @@ jobs:
               "content_type": "git",
               "content_url": '"\"https://github.com/$GITHUB_REPOSITORY\""',
               "content_path": '"\"$polpath\""',
-              "content_password_or_key": "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",
+              "content_password_or_key": "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",
               "content_branch": '"\"${{ steps.extract_branch.outputs.branch }}\""',
               "content_username": "cscorestack",
               "classification": '"\"$classify\""',
@@ -453,7 +453,7 @@ jobs:
             if [ -d $fname ]
             then
             echo "Uploading Policy ..."
-            sudo /usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/resource_loader.py http://$COREHOST:18080/v1 $COREUSER $COREPASS policy $fname/ A -s $POLICYSCOPE --update http://$COREHOST:18087/v2/
+            sudo /usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/resource_loader.py http://$COREHOST:18080/v1 $COREUSER $COREPASS policy $fname/ A -s $POLICYSCOPE --update
             git config --local user.email "action@github.com"
             git config --local user.name "GitHub Action"
             fi
