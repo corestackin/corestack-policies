@@ -323,6 +323,9 @@ jobs:
             classify=`jq -r '.classification' "$fname"/csmetadata.json`
             subclassify=`jq -r '.sub_classification' "$fname"/csmetadata.json`
             sev=`jq -r '.severity' "$fname"/csmetadata.json`
+            terms=`jq -r '.terms_and_conditions' "$fname"/csmetadata.json`
+            arn=`jq -r '.action_resource_name' "$fname"/csmetadata.json`
+            ip_args=`jq -r '.input_args' "$fname"/csmetadata.json`
             uriid=`date | md5sum | cut -c 1-5`
             if [[ "`jq -r '.uri' "$fname"/csmetadata.json`" == "" || "`jq -r '.uri' "$fname"/csmetadata.json`" == "null" ]]
             then
@@ -356,7 +359,7 @@ jobs:
               "content_type": "git",
               "content_url": '"\"https://github.com/$GITHUB_REPOSITORY\""',
               "content_path": '"\"$polpath\""',
-              "content_password_or_key": "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",
+              "content_password_or_key": "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",
               "content_branch": '"\"${{ steps.extract_branch.outputs.branch }}\""',
               "content_username": "cscorestack",
               "classification": '"\"$classify\""',
@@ -380,7 +383,20 @@ jobs:
               "recommendation": {
                 "name": '"\"$name\""',
                 "description": '"\"$rdesc\""',
-                "actions": []
+                "actions": [
+                    {
+                    "name": '"\"$name\""',
+                    "terms_and_conditions": '"\"$terms\""',
+                    "resource_level": "yes",
+                    "action_type": "template",
+                    "action_resource_name": '"\"$arn\""',
+                    "preexecute_required": false,
+                    "input_args": '"$ip_args"'
+                    }
+                ],
+                "action_details": {
+                  '"\"$name\""': {}
+                }
               },
               "uri": '"\"$uri\""'
             }' > $fname/$file.json
