@@ -222,11 +222,6 @@ jobs:
             jq --arg var $uri '.metadata.uri = $var' "$fname/$file"_policy.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json "$fname/$file"_policy.json
           }
           ### Metadata generator for gcp policies
-          corestackpolicyvalidation()
-          {
-            echo $fname
-            `/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/policy_validator.py $fname corestack_policy`
-          }
           createcorestackpolicymetadata()
           {
             contentstring=`/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/json2string.py "$fname/$file"_policy.json`
@@ -272,16 +267,17 @@ jobs:
             fi
             if [ -f "$fname/$file"_policy_rule.json ]
             then
-              policy_rule= 'cat "$fname/$file"_policy_rule.json'
+              policy_rule='cat "$fname/$file"_policy_rule.json'
             else
               policy_rule={}
             fi
             if [ -f "$fname/$file".sql ]
             then
-              rule_procedure_dict= {
-                "script": 'cat "$fname/$file".sql',
-                "name": `jq -r '.RuleName' "$fname/$file"_policy.json`,
-                "schema": "CostPolicy"
+              rule_procedure_dict=
+              {
+              "script": 'cat "$fname/$file".sql',
+              "name": `jq -r '.RuleName' "$fname/$file"_policy.json`,
+              "schema": "CostPolicy"
               }
             else
               rule_procedure_dict={}
@@ -477,7 +473,7 @@ jobs:
               if [ "$ptype" == "managed" ]
               then
                 echo "Detected corestack policy"
-                corestackpolicyvalidation
+                echo `/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/policy_validator.py "$fname/" corestack_policy`
                 createcorestackpolicymetadata
               fi
             fi
