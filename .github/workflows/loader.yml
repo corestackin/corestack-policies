@@ -473,8 +473,14 @@ jobs:
               if [ "$ptype" == "managed" ]
               then
                 echo "Detected corestack policy"
-                echo `/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/policy_validator.py "$fname/" corestack_policy`    
-                createcorestackpolicymetadata
+                errors=`/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/policy_validator.py "$fname/" corestack_policy`    
+                
+                if "$errors" == ""
+                then
+                  createcorestackpolicymetadata
+                else:
+                  echo "Something went wrong while loading corestack policy"
+                fi
               fi
             fi
             if [ -f "$fname"/parameters.json ]
