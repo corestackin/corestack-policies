@@ -61,8 +61,8 @@ jobs:
       - name: Process and Load Policies
         shell: bash
         env:
-          REPOUSERNAME: ${{ secrets.REPOUSER }}
-          REPOKEY: ${{ secrets.REPOSECRET }}
+          REPOUSERNAME: ${{ secrets.GITPOLICYUSER }}
+          REPOKEY: ${{ secrets.GITPOLICYPASSWORD }}
           COREHOST: ${{ secrets.DEVHOST }}
           COREUSER: ${{ secrets.DEVUSER }}
           COREPASS: ${{ secrets.DEVPASS }}
@@ -378,7 +378,7 @@ jobs:
               "content_type": "git",
               "content_url": '"\"https://github.com/$GITHUB_REPOSITORY\""',
               "content_path": '"\"$polpath\""',
-              "content_password_or_key": "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",
+              "content_password_or_key": '"\"$REPOKEY\""',
               "content_branch": '"\"${{ steps.extract_branch.outputs.branch }}\""',
               "content_username": "cscorestack",
               "classification": '"\"$classify\""',
@@ -473,7 +473,7 @@ jobs:
               if [ "$ptype" == "managed" ]
               then
                 echo "Detected corestack policy"
-                echo `/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/policy_validator.py "$fname/" corestack_policy`
+                echo `/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/policy_validator.py "$fname/" corestack_policy`    
                 createcorestackpolicymetadata
               fi
             fi
