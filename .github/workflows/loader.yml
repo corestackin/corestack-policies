@@ -257,22 +257,26 @@ jobs:
             then
               rec_name=$name
             fi
-            if [ "$params_dict" == "" ]
+            if [ "$params_dict" == "null" ]
             then
               params_dict={}
             fi
-            if [ "$assessment_dict" == "" ]
+            if [[ "$assessment_dict" == "" ||  "$assessment_dict" == "null" ]]
             then
               assessment_dict={}
             fi
             if [ -f "$fname/$file"_policy_rule.json ]
             then
+              echo "corestack policy content rule detected"
               policy_rule='cat "$fname/$file"_policy_rule.json'
             else
               policy_rule={}
             fi
+            echo "corestack policy content rule processed"
+            echo '$policy_rule'
             if [ -f "$fname/$file".sql ]
             then
+              echo "sql content detected"
               rule_procedure_dict=
               {
               "script": 'cat "$fname/$file".sql',
@@ -282,6 +286,7 @@ jobs:
             else
               rule_procedure_dict={}
             fi
+            echo '$rule_procedure_dict'
             echo '{
               "name": '"\"$name\""',
               "display_name": '"\"$dname\""',
@@ -313,9 +318,9 @@ jobs:
                             "actions": []
                           },
               "uri": '"\"$uri\""',
-              "assessment": "$assessment_dict",
-              "policy_rule": "$policy_rule",
-              "rule_procedure": "$rule_procedure_dict"
+              "assessment": '$assessment_dict',
+              "policy_rule": '$policy_rule',
+              "rule_procedure": '$rule_procedure_dict'
             }
             ' > $fname/$file.json
             #for var in `jq -r '.metadata.resource_type[]' "$fname/$file"_policy.json 2>/dev/null`
@@ -473,14 +478,8 @@ jobs:
               if [ "$ptype" == "managed" ]
               then
                 echo "Detected corestack policy"
-                errors=`/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/policy_validator.py "$fname/" corestack_policy`    
-                
-                if "$errors" == ""
-                then
-                  createcorestackpolicymetadata
-                else:
-                  echo "Something went wrong while loading corestack policy"
-                fi
+                `/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/policy_validator.py "$fname/" corestack_policy`
+                createcorestackpolicymetadata
               fi
             fi
             if [ -f "$fname"/parameters.json ]
