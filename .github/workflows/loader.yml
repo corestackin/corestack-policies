@@ -269,6 +269,11 @@ jobs:
             then
               echo "corestack policy content rule detected"
               policy_rule=`jq -r '.policy_rule' "$fname/$file"_policy_rule.json`
+              rule_procedure_dict=`jq -r '.rule_procedure' "$fname/$file"_policy_rule.json`
+              if [[ "$rule_procedure_dict" == {} ||  "$rule_procedure_dict" == "null" ]]
+              then
+                rule_procedure_dict={}
+              fi
             else
               policy_rule={}
             fi
@@ -305,13 +310,9 @@ jobs:
               "uri": '"\"$uri\""',
               "assessment": '$assessment_dict',
               "policy_rule": '$policy_rule',
-              "rule_procedure": {
-                script": [],
-                "name": `jq -r '.RuleName' "$fname/$file"_policy.json`,
-                "schema": "CostPolicy"
-              }
+              "rule_procedure": '$rule_procedure_dict'
             }
-          ' > $fname/$file.json
+            ' > $fname/$file.json
             #for var in `jq -r '.metadata.resource_type[]' "$fname/$file"_policy.json 2>/dev/null`
             #do
             #  jq --arg var $var '.resource_type[.resource_type| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
