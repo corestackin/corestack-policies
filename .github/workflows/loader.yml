@@ -268,25 +268,10 @@ jobs:
             if [ -f "$fname/$file"_policy_rule.json ]
             then
               echo "corestack policy content rule detected"
-              policy_rule='cat "$fname/$file"_policy_rule.json'
+              policy_rule=`jq -r '.policy_rule' "$fname/$file"_policy_rule.json`
             else
               policy_rule={}
             fi
-            echo "corestack policy content rule processed"
-            echo '$policy_rule'
-            if [ -f "$fname/$file".sql ]
-            then
-              echo "sql content detected"
-              rule_procedure_dict=
-              {
-              "script": 'cat "$fname/$file".sql',
-              "name": `jq -r '.RuleName' "$fname/$file"_policy.json`,
-              "schema": "CostPolicy"
-              }
-            else
-              rule_procedure_dict={}
-            fi
-            echo '$rule_procedure_dict'
             echo '{
               "name": '"\"$name\""',
               "display_name": '"\"$dname\""',
@@ -320,9 +305,13 @@ jobs:
               "uri": '"\"$uri\""',
               "assessment": '$assessment_dict',
               "policy_rule": '$policy_rule',
-              "rule_procedure": '$rule_procedure_dict'
+              "rule_procedure": {
+                script": [],
+                "name": `jq -r '.RuleName' "$fname/$file"_policy.json`,
+                "schema": "CostPolicy"
+              }
             }
-            ' > $fname/$file.json
+          ' > $fname/$file.json
             #for var in `jq -r '.metadata.resource_type[]' "$fname/$file"_policy.json 2>/dev/null`
             #do
             #  jq --arg var $var '.resource_type[.resource_type| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
