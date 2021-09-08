@@ -1,7 +1,7 @@
 ##### This is a workflow to load policies to corestack marketplace
 # Author: Karthick <karthick.k@corestack.io>
 #
-name: CI
+name: CIhttps://github.com/corestacklabs/core-policies/actions/runs/1212507432
 on:
   push:
     branches: [ master ]
@@ -269,50 +269,92 @@ jobs:
             then
               echo "corestack policy content rule detected"
               policy_rule=`jq -r '.policy_rule' "$fname/$file"_policy_rule.json`
-              rule_procedure_dict=`jq -r '.rule_procedure' "$fname/$file"_policy_rule.json`
-              if [[ "$rule_procedure_dict" == {} ||  "$rule_procedure_dict" == "null" ]]
-              then
-                rule_procedure_dict={}
-              fi
             else
               policy_rule={}
             fi
-            echo '{
-              "name": '"\"$name\""',
-              "display_name": '"\"$dname\""',
-              "description": '"\"$poldesc\""',
-              "category": "service",
-              "status": "active",
-              "content": '$contentstring',
-              "parameters": '"\"$params_dict\""',
-              "classification": '"\"$classify\""',
-              "sub_classification": '"\"$subclassify\""',
-              "resource_type": '"\"$rtype\""',
-              "service_resource": '"$serviceresource"',
-              "severity": '"\"$sev\""',
-              "type": [
-                "Cloud"
-              ],
-              "services": [
-                "AWS"
-              ],
-              "scope": "global",
-              "metadata": {},
-              "resources": [],
-              "is_temp": false,
-              "is_system_policy": false,
-              "engine_type": "corestack_policy",
-              "recommendation": {
-                            "name": '"\"$rec_name\""',
-                            "description": '"\"$poldesc\""',
-                            "actions": []
-                          },
-              "uri": '"\"$uri\""',
-              "assessment": '$assessment_dict',
-              "policy_rule": '$policy_rule',
-              "rule_procedure": '$rule_procedure_dict'
-            }
-            ' > $fname/$file.json
+            if [ -f "$fname/$file".sql ]
+            then
+              output=`/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/json2string.py "$fname/$file".sql`
+              p_name=`jq -r '.RuleName' "$fname/$file"_policy.json`
+              echo "sql content detected"
+              echo '{
+                      "name": '"\"$name\""',
+                      "display_name": '"\"$dname\""',
+                      "description": '"\"$poldesc\""',
+                      "category": "service",
+                      "status": "active",
+                      "content": '$contentstring',
+                      "parameters": '"\"$params_dict\""',
+                      "classification": '"\"$classify\""',
+                      "sub_classification": '"\"$subclassify\""',
+                      "resource_type": '"\"$rtype\""',
+                      "service_resource": '"$serviceresource"',
+                      "severity": '"\"$sev\""',
+                      "type": [
+                        "Cloud"
+                      ],
+                      "services": [
+                        "AWS"
+                      ],
+                      "scope": "global",
+                      "metadata": {},
+                      "resources": [],
+                      "is_temp": false,
+                      "is_system_policy": false,
+                      "engine_type": "corestack_policy",
+                      "recommendation": {
+                                    "name": '"\"$rec_name\""',
+                                    "description": '"\"$poldesc\""',
+                                    "actions": []
+                                  },
+                      "uri": '"\"$uri\""',
+                      "assessment": '$assessment_dict',
+                      "policy_rule": '$policy_rule',
+                      "rule_procedure": {
+                        "script": '$output',
+                        "name": '"\"$p_name\""',
+                        "schema": "CostPolicy"
+                        }
+                    }
+                    ' > $fname/$file.json
+            else
+              echo '{
+                      "name": '"\"$name\""',
+                      "display_name": '"\"$dname\""',
+                      "description": '"\"$poldesc\""',
+                      "category": "service",
+                      "status": "active",
+                      "content": '$contentstring',
+                      "parameters": '"\"$params_dict\""',
+                      "classification": '"\"$classify\""',
+                      "sub_classification": '"\"$subclassify\""',
+                      "resource_type": '"\"$rtype\""',
+                      "service_resource": '"$serviceresource"',
+                      "severity": '"\"$sev\""',
+                      "type": [
+                        "Cloud"
+                      ],
+                      "services": [
+                        "AWS"
+                      ],
+                      "scope": "global",
+                      "metadata": {},
+                      "resources": [],
+                      "is_temp": false,
+                      "is_system_policy": false,
+                      "engine_type": "corestack_policy",
+                      "recommendation": {
+                                    "name": '"\"$rec_name\""',
+                                    "description": '"\"$poldesc\""',
+                                    "actions": []
+                                  },
+                      "uri": '"\"$uri\""',
+                      "assessment": '$assessment_dict',
+                      "policy_rule": '$policy_rule',
+                      "rule_procedure": {}
+                    }
+                    ' > $fname/$file.json
+            fi
             #for var in `jq -r '.metadata.resource_type[]' "$fname/$file"_policy.json 2>/dev/null`
             #do
             #  jq --arg var $var '.resource_type[.resource_type| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
