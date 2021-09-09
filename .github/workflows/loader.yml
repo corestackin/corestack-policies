@@ -370,7 +370,7 @@ jobs:
             uri=`jq -r '.uri' $fname/$file.json`
           }
           ### Metadata generator for aws config policies
-          createawspolicymeta()
+          createawspolicymeta() 
           {
             name=`echo $file`
             dname=`echo $file|sed 's/_/ /g'`
@@ -399,9 +399,17 @@ jobs:
             then
               poldesc=$dname
             fi
-            if [ "$ptype" == "managed" ]
+            if [[ "$ptype" == "managed" || "$ptype" == "security" ]]
             then
-              polpath=AWS/config/managed/$file
+              if [ "$ptype" == "managed" ]
+              then
+                polpath=AWS/config/managed/$file
+              fi
+              if [ "$ptype" == "security" ]
+              echo "under security"
+              then
+                polpath=AWS/config/managed/security/$file
+              fi
             else
               polpath=AWS/config/custom/$file
             fi
@@ -489,7 +497,7 @@ jobs:
             if [ -f "$fname/$file"_policy.json ]
             then
               echo "Policy file detected"
-              if [ "$ptype" == "azurepolicy" ]
+              if [[ "$ptype" == "azurepolicy" || "$ptype" == "access" || "$ptype" == "cost" || "$ptype" == "operation" || "$ptype" == "resource" || "$ptype" == "security" ]]
               then
                 echo "Detected azure policy"
                 createazurepolicymeta
@@ -498,7 +506,7 @@ jobs:
             if [ -f "$fname/$file"_policy.json ]
             then
               echo "Policy file detected"
-              if [ "$ptype" == "gcp" ]
+              if [[ "$ptype" == "gcp" || "$ptype" == "gcp_organization" || "$ptype" == "access" || "$ptype" == "cost" || "$ptype" == "operation" || "$ptype" == "resource" || "$ptype" == "security" ]]
               then
                 echo "Detected gcp policy"
                 creategcppolicymetadata
@@ -507,7 +515,7 @@ jobs:
             if [ -f "$fname/$file"_policy.json ]
             then
               echo "Policy file detected"
-              if [ "$ptype" == "managed" ]
+              if [[ "$ptype" == "managed" || "$ptype" == "access" || "$ptype" == "cost" || "$ptype" == "operation" || "$ptype" == "resource" || "$ptype" == "security" ]]
               then
                 echo "Detected corestack policy"
                 `/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/policy_validator.py "$fname/" corestack_policy`
@@ -516,7 +524,7 @@ jobs:
             fi
             if [ -f "$fname"/parameters.json ]
             then
-              if [[ "$ptype" == "config" || "$ptype" == "managed" || "$ptype" == "custom" ]]
+              if [[ "$ptype" == "config" || "$ptype" == "managed" || "$ptype" == "custom" || "$ptype" == "access" || "$ptype" == "cost" || "$ptype" == "operation" || "$ptype" == "resource" || "$ptype" == "security" ]]
               echo "Detected aws policy"
               then
                 createawspolicymeta
