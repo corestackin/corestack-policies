@@ -413,6 +413,8 @@ jobs:
             else
               polpath=AWS/config/custom/$file
             fi
+            echo "polpath below"
+            echo $polpath
             echo '{
               "name": '"\"$name\""',
               "display_name": '"\"$dname\""',
