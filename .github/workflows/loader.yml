@@ -373,6 +373,7 @@ jobs:
           createawspolicymeta() 
           {
             name=`echo $file`
+            contentstring=`/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/json2string.py "$fname/"parameters.json`
             dname=`echo $file|sed 's/_/ /g'`
             poldesc=`jq -r '.policy_description' "$fname"/csmetadata.json 2>/dev/null`
             rdesc=`jq -r '.recommendation_description' "$fname"/csmetadata.json 2>/dev/null`
@@ -399,22 +400,30 @@ jobs:
             then
               poldesc=$dname
             fi
-            if [[ "$ptype" == "managed" || "$ptype" == "security" ]]
+            if [ "$ptype" == "security" ]
             then
-              if [ "$ptype" == "managed" ]
-              then
-                polpath=AWS/config/managed/$file
-              fi
-              if [ "$ptype" == "security" ]
-              echo "under security"
-              then
-                polpath=AWS/config/managed/security/$file
-              fi
-            else
+              polpath=AWS/config/managed/security/$file
+            fi
+            if [ "$ptype" == "cost" ]
+            then
+              polpath=AWS/config/managed/cost/$file
+            fi
+            if [ "$ptype" == "access" ]
+            then
+              polpath=AWS/config/managed/access/$file
+            fi
+            if [ "$ptype" == "operations" ]
+            then
+              polpath=AWS/config/managed/operations/$file
+            fi
+            if [ "$ptype" == "resource" ]
+            then
+              polpath=AWS/config/managed/resource/$file
+            fi
+            if [ "$ptype" == "custom" ]
+            then
               polpath=AWS/config/custom/$file
             fi
-            echo "polpath below"
-            echo $polpath
             echo '{
               "name": '"\"$name\""',
               "display_name": '"\"$dname\""',
@@ -422,12 +431,7 @@ jobs:
               "category": "service",
               "status": "active",
               "config_type": '"\"$ptype\""',
-              "content_type": "git",
-              "content_url": '"\"https://github.com/$GITHUB_REPOSITORY\""',
-              "content_path": '"\"$polpath\""',
-              "content_password_or_key": '"\"$REPOKEY\""',
-              "content_branch": '"\"${{ steps.extract_branch.outputs.branch }}\""',
-              "content_username": "cscorestack",
+              "content": '$contentstring',
               "classification": '"\"$classify\""',
               "sub_classification": '"\"$subclassify\""',
               "services": [
