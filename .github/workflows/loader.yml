@@ -311,9 +311,7 @@ jobs:
                       "assessment": '$assessment_dict',
                       "policy_rule": '$policy_rule',
                       "rule_procedure": {
-                        "script": '$output',
-                        "name": '"\"$p_name\""',
-                        "schema": "CostPolicy"
+                        "script": '$output'
                         }
                     }
                     ' > $fname/$file.json
@@ -552,7 +550,7 @@ jobs:
               git add "$fname/$file".json
               added=true
             fi
-            if [[ -f "$fname/$file"_policy.json && -f "$fname/$file".json && "$ptype" == "corestack" ]]
+            if [[ -f "$fname/$file"_policy.json && -f "$fname/$file".json && "$ptype" == "managed" ]]
             then
               git add "$fname/$file"_policy.json
               git add "$fname/$file".json
