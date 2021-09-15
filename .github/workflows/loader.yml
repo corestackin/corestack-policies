@@ -1,7 +1,7 @@
 ##### This is a workflow to load policies to corestack marketplace
 # Author: Karthick <karthick.k@corestack.io>
 #
-name: CIhttps://github.com/corestacklabs/core-policies/actions/runs/1212507432
+name: Dev Policy Workflow
 on:
   push:
     branches: [ master ]
@@ -9,6 +9,7 @@ on:
       - 'AWS/**'
       - 'Azure/**'
       - 'GCP/**'
+      - '!AWS/corestack/**'
 jobs:
   build:
     # Skip running this workflow if commit message has "***NO_CI***" or "[skip ci]" or "[ci skip]"
