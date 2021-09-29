@@ -559,3 +559,4 @@ jobs:
             fi
             if [ -f "$fname"/csmetadata.json ]
             then
+              git add "$fname"/csmetadata.json
