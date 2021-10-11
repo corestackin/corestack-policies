@@ -373,7 +373,6 @@ jobs:
           createawspolicymeta()
           {
             name=`echo $file`
-            contentstring=`/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/json2string.py "$fname/"parameters.json`
             dname=`echo $file|sed 's/_/ /g'`
             poldesc=`jq -r '.policy_description' "$fname"/csmetadata.json 2>/dev/null`
             rdesc=`jq -r '.recommendation_description' "$fname"/csmetadata.json 2>/dev/null`
@@ -431,7 +430,12 @@ jobs:
               "category": "service",
               "status": "active",
               "config_type": '"\"$ptype\""',
-              "content": '$contentstring',
+              "content_type": "git",
+              "content_url": '"\"https://github.com/$GITHUB_REPOSITORY\""',
+              "content_path": '"\"$polpath\""',
+              "content_password_or_key": '"\"$REPOKEY\""',
+              "content_branch": "master",
+              "content_username": "cscorestack",
               "classification": '"\"$classify\""',
               "sub_classification": '"\"$subclassify\""',
               "services": [
