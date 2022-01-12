@@ -73,6 +73,7 @@ jobs:
         env:
           REPOUSERNAME: ${{ secrets.GITPOLICYUSER }}
           REPOKEY: ${{ secrets.GITPOLICYPASSWORD }}
+          PAT: ${{ secrets.GITPOLICYPASSWORD }}
           COREHOST: ${{ secrets.DEVHOST }}
           COREUSER: ${{ secrets.DEVUSER }}
           COREPASS: ${{ secrets.DEVPASS }}
@@ -441,7 +442,7 @@ jobs:
               "content_type": "git",
               "content_url": '"\"https://github.com/$GITHUB_REPOSITORY\""',
               "content_path": '"\"$polpath\""',
-              "content_password_or_key": '"\"$REPOKEY\""',
+              "content_password_or_key": '"\"$PAT\""',
               "content_branch": "master",
               "content_username": "cscorestack",
               "classification": '"\"$classify\""',
