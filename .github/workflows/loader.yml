@@ -503,6 +503,7 @@ jobs:
               rdesc=`jq -r '.recommendation_description' "$fname"/csmetadata.json 2>/dev/null`
               classify=`jq -r '.classification' "$fname"/csmetadata.json`
               subclassify=`jq -r '.sub_classification' "$fname"/csmetadata.json`
+              rtype=`jq -r '.resource_type' "$fname"/csmetadata.json`
               sev=`jq -r '.severity' "$fname"/csmetadata.json`
               uriid=`date | md5sum | cut -c 1-5`
               if [[ "`jq -r '.uri' "$fname"/csmetadata.json`" == "" || "`jq -r '.uri' "$fname"/csmetadata.json`" == "null" ]]
