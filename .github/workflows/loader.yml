@@ -550,7 +550,8 @@ jobs:
                 "recommendation": {
                   "name": '"\"$name\""',
                   "description": '"\"$rdesc\""',
-                  "actions": []
+                  "actions": [],
+                  "resource_type": '"\"$rtype\""'
                 },
                 "uri": '"\"$uri\""'
               }' > $fname/$file.json
