@@ -161,6 +161,82 @@ jobs:
             uri=`jq -r '.uri' $fname/$file.json`
             jq --arg var $uri '.metadata.uri = $var' "$fname/$file"_policy.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json "$fname/$file"_policy.json
           }
+          ### Metadata generator for azure policies
+          createadvisormeta()
+          {
+            contentstring=`/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/json2string.py "$fname/$file"_policy.json`
+            name=`echo $file`
+            dname=`echo $file|sed 's/_/ /g'`
+            rec_name=`jq -r '.metadata.recommendation_name' "$fname/$file"_policy.json`
+            poldesc=`jq -r '.metadata.policy_description' "$fname/$file"_policy.json`
+            rec_desc=`jq -r '.metadata.recommendation_description' "$fname/$file"_policy.json`
+            classify=`jq -r '.metadata.classification' "$fname/$file"_policy.json`
+            subclassify=`jq -r '.metadata.sub_classification' "$fname/$file"_policy.json`
+            engine=`jq -r '.metadata.engine_type' "$fname/$file"_policy.json`
+            rtype=`jq -r '.metadata.resource_type' "$fname/$file"_policy.json`
+            sev=`jq -r '.metadata.severity' "$fname/$file"_policy.json`
+            uriid=`date | md5sum | cut -c 1-5`
+            if [ "`jq -r '.metadata.uri' "$fname/$file"_policy.json`" == "" ]
+            then
+              uri="policy/azure_advisor/global/azure/compliance/others/$uriid"
+            else
+              uri=`jq -r '.metadata.uri' "$fname/$file"_policy.json`
+            fi
+            if [ "$poldesc" == "" ]
+            then
+              poldesc=$dname
+            fi
+            if [ "$rec_name" == "" ]
+            then
+              rec_name=$name
+            fi
+            echo '{
+              "name": '"\"$name\""',
+              "display_name": '"\"$dname\""',
+              "description": '"\"$poldesc\""',
+              "category": "service",
+              "status": "active",
+              "content": '$contentstring',
+              "parameters": {},
+              "classification": '"\"$classify\""',
+              "sub_classification": '"\"$subclassify\""',
+              "service_resource": [],
+              "resource_type": '"\"$rtype\""',
+              "severity": '"\"$sev\""',
+              "type": [
+                "Cloud"
+              ],
+              "services": [
+                "Azure"
+              ],
+              "scope": "global",
+              "metadata": {},
+              "resources": [],
+              "is_temp": false,
+              "is_system_policy": false,
+              "recommendation": {
+                            "name": '"\"$rec_name\""',
+                            "description": '"\"$poldesc\""',
+                            "actions": []
+                          },
+              "uri": '"\"$uri\""'
+            }
+            ' > $fname/$file.json
+            #for var in `jq -r '.metadata.resource_type[]' "$fname/$file"_policy.json 2>/dev/null`
+            #do
+            #  jq --arg var $var '.resource_type[.resource_type| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
+            #done
+            for var in `jq -r '.metadata.service_resource[]' "$fname/$file"_policy.json 2>/dev/null`
+            do
+              jq --arg var $var '.service_resource[.service_resource| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
+            done
+            for var in `jq -r '.metadata.resources[]' "$fname/$file"_policy.json 2>/dev/null`
+            do
+                    jq --arg var $var '.resources[.resources| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
+            done
+            uri=`jq -r '.uri' $fname/$file.json`
+            jq --arg var $uri '.metadata.uri = $var' "$fname/$file"_policy.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json "$fname/$file"_policy.json
+          }
           ### Metadata generator for gcp policies
           creategcppolicymetadata()
           {
@@ -597,6 +673,15 @@ jobs:
             if [ -f "$fname/$file"_policy.json ]
             then
               echo "Policy file detected"
+              if [[ "$ptype" == "azureadvisor" || "$ptype" == "access" || "$ptype" == "cost" || "$ptype" == "operation" || "$ptype" == "resource" || "$ptype" == "security" ]]
+              then
+                echo "Detected azure advisor policy"
+                createadvisormeta
+              fi
+            fi
+            if [ -f "$fname/$file"_policy.json ]
+            then
+              echo "Policy file detected"
               if [[ "$ptype" == "gcp" || "$ptype" == "gcp_organization" || "$ptype" == "access" || "$ptype" == "cost" || "$ptype" == "operation" || "$ptype" == "resource" || "$ptype" == "security" ]]
               then
                 echo "Detected gcp policy"
@@ -636,7 +721,7 @@ jobs:
             fi
             added=false
             # Add changed files back to git
-            if [[ -f "$fname/$file"_policy.json && -f "$fname/$file".json && "$ptype" == "azurepolicy" || -f "$fname/$file"_policy.json && -f "$fname/$file".json && "$ptype" == "gcp" ]]
+            if [[ -f "$fname/$file"_policy.json && -f "$fname/$file".json && "$ptype" == "azurepolicy" || -f "$fname/$file"_policy.json && -f "$fname/$file".json && "$ptype" == "azureadvisor" || -f "$fname/$file"_policy.json && -f "$fname/$file".json && "$ptype" == "gcp" ]]
             then
               git add "$fname/$file"_policy.json
               git add "$fname/$file".json
