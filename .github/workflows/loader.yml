@@ -11,6 +11,7 @@ on:
       - 'GCP/**'
       - 'Oracle/**'
       - '!AWS/corestack/**'
+      - '!Azure/corestack/**'
   pull_request:
     branches: [ master ]
     paths:
@@ -19,6 +20,7 @@ on:
       - 'GCP/**'
       - 'Oracle/**'
       - '!AWS/corestack/**'
+      - '!Azure/corestack/**'
 jobs:
   build:
     # Skip running this workflow if commit message has "***NO_CI***" or "[skip ci]" or "[ci skip]"
