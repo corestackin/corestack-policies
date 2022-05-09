@@ -1,740 +1,117 @@
 ##### This is a workflow to load policies to corestack marketplace
 # Author: Karthick <karthick.k@corestack.io>
 #
-name: Dev Policy Workflow
+
+
+name: QA-CI
 on:
   push:
     branches: [ master ]
     paths:
-      - 'AWS/**'
-      - 'Azure/**'
-      - 'GCP/**'
-      - 'Oracle/**'
-      - '!AWS/corestack/**'
-      - '!Azure/corestack/**'
+    - 'AWS/**'
+    - 'Azure/**'
+    - 'Oracle/**'
+    - 'GCP/**'
   pull_request:
     branches: [ master ]
     paths:
       - 'AWS/**'
       - 'Azure/**'
-      - 'GCP/**'
       - 'Oracle/**'
-      - '!AWS/corestack/**'
-      - '!Azure/corestack/**'
+      - 'GCP/**'
 jobs:
   build:
     # Skip running this workflow if commit message has "***NO_CI***" or "[skip ci]" or "[ci skip]"
-    if: github.event_name == 'push' || github.event_name == 'pull_request' && contains(toJson(github.event.commits), '***NO_CI***') == false && contains(toJson(github.event.commits), '[ci skip]') == false && contains(toJson(github.event.commits), '[skip ci]') == false
+    if: github.event_name == 'push' && contains(toJson(github.event.commits), '***NO_CI***') == false && contains(toJson(github.event.commits), '[ci skip]') == false && contains(toJson(github.event.commits), '[skip ci]') == false
     runs-on: ubuntu-latest
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v1
-      #  with: # for testing
-      #    ref: '668569b8abc518c2b16eda159bf466868e066d39' # for testing
-      - name: Get Committer Email
-        run: |
-          AUTHOR=`git show HEAD|grep Author|head -1|awk '{print $NF}'|tr -d '<'|tr -d '>'`
-          echo $AUTHOR
-          if [ "`echo $AUTHOR|grep users.noreply.github.com`" != "" ]
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v1
+    #  with: # for testing
+    #    ref: '668569b8abc518c2b16eda159bf466868e066d39' # for testing
+    - name: Get Committer Email
+      run: |
+        AUTHOR=`git show HEAD|grep Author|head -1|awk '{print $NF}'|tr -d '<'|tr -d '>'`
+        echo $AUTHOR
+        if [ "`echo $AUTHOR|grep users.noreply.github.com`" != "" ]
+        then
+          AUTHOR="no" 
+          export AUTHOR
+          echo "AUTHOR=$AUTHOR" >> $GITHUB_ENV
+        else
+          export AUTHOR
+          echo "AUTHOR=$AUTHOR" >> $GITHUB_ENV
+        fi
+    - name: Install pre-requisites
+      run: |
+        sudo apt update
+        sudo apt install jsonlint jq python2.7-minimal python-pip python-yaml -y
+        sudo pip install httplib2 pandas
+    - name: Get list of modified/added files
+      shell: bash
+      run: |
+        cd $GITHUB_WORKSPACE
+        # git diff-tree --no-commit-id --name-only -r  61e44bb3861f02b6c872d53c5a207db5ab362076 | tee $HOME/files_added # for testing
+        git diff-tree --no-commit-id --name-only -r HEAD | tee $HOME/files_added # for live
+    - name: Validate JSON file
+      run: |
+        echo "Validating JSON files ..."
+        for file in `cat $HOME/files_added`
+        do
+          if [[ -f $GITHUB_WORKSPACE/$file && "`echo $file|awk -F. '{print $NF}'`" == "json" || "`echo $file|awk -F. '{print $NF}'`" == "JSON" ]]
           then
-            AUTHOR="no"
-            export AUTHOR
-            echo "AUTHOR=$AUTHOR" >> $GITHUB_ENV
-          else
-            export AUTHOR
-            echo "AUTHOR=$AUTHOR" >> $GITHUB_ENV
+            jsonlint-php $GITHUB_WORKSPACE/$file
           fi
-      - name: Install pre-requisites
-        run: |
-          sudo apt update -y
-          sudo apt install jsonlint jq python2.7-minimal python-pip python-yaml -y
-          sudo pip install httplib2 pandas
-          sudo pip install requests==2.21.0
-      - name: Get list of modified/added files
-        shell: bash
-        run: |
-          cd $GITHUB_WORKSPACE
-          # git diff-tree --no-commit-id --name-only -r  61e44bb3861f02b6c872d53c5a207db5ab362076 | tee $HOME/files_added # for testing
-          git diff-tree --no-commit-id --name-only -r HEAD | tee $HOME/files_added # for live
-      - name: Validate JSON file
-        run: |
-          echo "Validating JSON files ..."
-          for file in `cat $HOME/files_added`
-          do
-            if [[ -f $GITHUB_WORKSPACE/$file && "`echo $file|awk -F. '{print $NF}'`" == "json" || "`echo $file|awk -F. '{print $NF}'`" == "JSON" ]]
+        done
+    - name: Extract branch name
+      shell: bash
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
+    - name: Process and Load Policies
+      shell: bash
+      env:
+        REPOUSERNAME: ${{ secrets.GITPOLICYUSER }}
+        REPOKEY: ${{ secrets.GITPOLICYPASSWORD }}
+        PAT: ${{ secrets.GITPOLICYPASSWORD }}
+        COREHOST: ${{ secrets.DEVHOST }}
+        COREUSER: ${{ secrets.DEVUSER }}
+        COREPASS: ${{ secrets.DEVPASS }}
+        GITPASS: ${{ secrets.GIT_SECRET }}
+        POLICYSCOPE: ${{ secrets.SCOPE }}
+      run: |
+        # Determine added/updated policies
+        for file in `cat $HOME/files_added`
+        do 
+          echo $file|rev |cut -d "/" -f 2- | rev
+        done|uniq > $HOME/policies_added
+        
+        added=false
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        # Determine policy type and call appropriate metadata generator function
+        cd $GITHUB_WORKSPACE
+        for fname in `cat $HOME/policies_added|grep -v .github|grep -v README.md`
+        do
+          fname=`echo $fname|sed 's/\/$//'`
+          wname=$fname
+          file=`echo $fname|awk -F/ '{print $NF}'`
+          fname=$GITHUB_WORKSPACE/$fname
+          echo "Determined policy path: $fname"	
+          # Start to upload the policy
+          if [ -d $fname ]
+          then
+            if [ `jq 'select(.content_branch == "master")' $fname/$file.json | wc -l` -gt 0 ]
             then
-              jsonlint-php $GITHUB_WORKSPACE/$file
-            fi
-          done
-      - name: Extract branch name
-        shell: bash
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-        id: extract_branch
-      - name: Process and Load Policies
-        shell: bash
-        env:
-          REPOUSERNAME: ${{ secrets.GITPOLICYUSER }}
-          REPOKEY: ${{ secrets.GITPOLICYPASSWORD }}
-          PAT: ${{ secrets.GITPOLICYPASSWORD }}
-          COREHOST: ${{ secrets.DEVHOST }}
-          COREUSER: ${{ secrets.DEVUSER }}
-          COREPASS: ${{ secrets.DEVPASS }}
-          GITPASS: ${{ secrets.GIT_SECRET }}
-          POLICYSCOPE: ${{ secrets.SCOPE }}
-        run: |
-          ### Metadata generator for azure policies
-          createazurepolicymeta()
-          {
-            contentstring=`/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/json2string.py "$fname/$file"_policy.json`
-            name=`echo $file`
-            dname=`echo $file|sed 's/_/ /g'`
-            poldesc=`jq -r '.metadata.policy_description' "$fname/$file"_policy.json`
-            polid=`jq -r '.metadata.policy_id' "$fname/$file"_policy.json`
-            classify=`jq -r '.metadata.classification' "$fname/$file"_policy.json`
-            subclassify=`jq -r '.metadata.sub_classification' "$fname/$file"_policy.json`
-            sev=`jq -r '.metadata.severity' "$fname/$file"_policy.json`
-            rtype=`jq -r '.metadata.resource_type' "$fname/$file"_policy.json`
-            rec_name=`jq -r '.metadata.recommendation_name' "$fname/$file"_policy.json`
-            params_dict=`jq -r '.metadata.params_dict' "$fname/$file"_policy.json`
-            uriid=`date | md5sum | cut -c 1-5`
-            if [ "`jq -r '.metadata.uri' "$fname/$file"_policy.json`" == "" ]
-            then
-              uri="policy/azure_policy/global/azure/compliance/others/$uriid"
+            jq '.content_branch="qa"' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
+            git add "$fname/$file".json
+            added=true
             else
-              uri=`jq -r '.metadata.uri' "$fname/$file"_policy.json`
+            echo "No change in metadata"
             fi
-            if [ "$poldesc" == "" ]
-            then
-              poldesc=$dname
-            fi
-            if [ "$rec_name" == "" ]
-            then
-              rec_name=$name
-            fi
-            if [ "$params_dict" == "" ]
-            then
-              params_dict={}
-            fi
-            echo '{
-              "name": '"\"$name\""',
-              "policy_id": '"\"$polid\""',
-              "display_name": '"\"$dname\""',
-              "description": '"\"$poldesc\""',
-              "category": "service",
-              "status": "active",
-              "content": '$contentstring',
-              "parameters": '"\"$params_dict\""',
-              "classification": '"\"$classify\""',
-              "sub_classification": '"\"$subclassify\""',
-              "service_resource": [],
-              "resource_type": '"\"$rtype\""',
-              "severity": '"\"$sev\""',
-              "type": [
-                "Cloud"
-              ],
-              "services": [
-                "Azure"
-              ],
-              "scope": "global",
-              "metadata": {},
-              "resources": [],
-              "is_temp": false,
-              "is_system_policy": false,
-              "recommendation": {
-                            "name": '"\"$rec_name\""',
-                            "description": '"\"$poldesc\""',
-                            "actions": []
-                          },
-              "uri": '"\"$uri\""'
-            }
-            ' > $fname/$file.json
-            #for var in `jq -r '.metadata.resource_type[]' "$fname/$file"_policy.json 2>/dev/null`
-            #do
-            #  jq --arg var $var '.resource_type[.resource_type| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-            #done
-            for var in `jq -r '.metadata.service_resource[]' "$fname/$file"_policy.json 2>/dev/null`
-            do
-              jq --arg var $var '.service_resource[.service_resource| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-            done
-            for var in `jq -r '.metadata.resources[]' "$fname/$file"_policy.json 2>/dev/null`
-            do
-                    jq --arg var $var '.resources[.resources| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-            done
-            uri=`jq -r '.uri' $fname/$file.json`
-            jq --arg var $uri '.metadata.uri = $var' "$fname/$file"_policy.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json "$fname/$file"_policy.json
-          }
-          ### Metadata generator for azure policies
-          createadvisormeta()
-          {
-            contentstring=`/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/json2string.py "$fname/$file"_policy.json`
-            name=`echo $file`
-            dname=`echo $file|sed 's/_/ /g'`
-            rec_name=`jq -r '.metadata.recommendation_name' "$fname/$file"_policy.json`
-            poldesc=`jq -r '.metadata.policy_description' "$fname/$file"_policy.json`
-            rec_desc=`jq -r '.metadata.recommendation_description' "$fname/$file"_policy.json`
-            classify=`jq -r '.metadata.classification' "$fname/$file"_policy.json`
-            subclassify=`jq -r '.metadata.sub_classification' "$fname/$file"_policy.json`
-            engine=`jq -r '.metadata.engine_type' "$fname/$file"_policy.json`
-            rtype=`jq -r '.metadata.resource_type' "$fname/$file"_policy.json`
-            sev=`jq -r '.metadata.severity' "$fname/$file"_policy.json`
-            uriid=`date | md5sum | cut -c 1-5`
-            if [ "`jq -r '.metadata.uri' "$fname/$file"_policy.json`" == "" ]
-            then
-              uri="policy/azure_advisor/global/azure/compliance/others/$uriid"
-            else
-              uri=`jq -r '.metadata.uri' "$fname/$file"_policy.json`
-            fi
-            if [ "$poldesc" == "" ]
-            then
-              poldesc=$dname
-            fi
-            if [ "$rec_name" == "" ]
-            then
-              rec_name=$name
-            fi
-            echo '{
-              "name": '"\"$name\""',
-              "display_name": '"\"$dname\""',
-              "description": '"\"$poldesc\""',
-              "category": "service",
-              "status": "active",
-              "content": '$contentstring',
-              "parameters": {},
-              "classification": '"\"$classify\""',
-              "sub_classification": '"\"$subclassify\""',
-              "service_resource": [],
-              "resource_type": '"\"$rtype\""',
-              "severity": '"\"$sev\""',
-              "type": [
-                "Cloud"
-              ],
-              "services": [
-                "Azure"
-              ],
-              "scope": "global",
-              "metadata": {},
-              "resources": [],
-              "is_temp": false,
-              "is_system_policy": false,
-              "recommendation": {
-                            "name": '"\"$rec_name\""',
-                            "description": '"\"$poldesc\""',
-                            "actions": []
-                          },
-              "uri": '"\"$uri\""'
-            }
-            ' > $fname/$file.json
-            #for var in `jq -r '.metadata.resource_type[]' "$fname/$file"_policy.json 2>/dev/null`
-            #do
-            #  jq --arg var $var '.resource_type[.resource_type| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-            #done
-            for var in `jq -r '.metadata.service_resource[]' "$fname/$file"_policy.json 2>/dev/null`
-            do
-              jq --arg var $var '.service_resource[.service_resource| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-            done
-            for var in `jq -r '.metadata.resources[]' "$fname/$file"_policy.json 2>/dev/null`
-            do
-                    jq --arg var $var '.resources[.resources| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-            done
-            uri=`jq -r '.uri' $fname/$file.json`
-            jq --arg var $uri '.metadata.uri = $var' "$fname/$file"_policy.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json "$fname/$file"_policy.json
-          }
-          ### Metadata generator for gcp policies
-          creategcppolicymetadata()
-          {
-            contentstring=`/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/json2string.py "$fname/$file"_policy.json`
-            name=`echo $file`
-            dname=`echo $file|sed 's/_/ /g'`
-            poldesc=`jq -r '.metadata.policy_description' "$fname/$file"_policy.json`
-            classify=`jq -r '.metadata.classification' "$fname/$file"_policy.json`
-            subclassify=`jq -r '.metadata.sub_classification' "$fname/$file"_policy.json`
-            sev=`jq -r '.metadata.severity' "$fname/$file"_policy.json`
-            rtype=`jq -r '.metadata.resource_type' "$fname/$file"_policy.json`
-            serviceresource=`jq -r '.metadata.service_resource' "$fname/$file"_policy.json`
-            params_dict=`jq -r '.metadata.params_dict' "$fname/$file"_policy.json`
-            uriid=`date | md5sum | cut -c 1-5`
-            if [ "`jq -r '.metadata.uri' "$fname/$file"_policy.json`" == "" ]
-            then
-              uri="policy/gcp_policy/global/gcp/compliance/vm/$uriid"
-            else
-              uri=`jq -r '.metadata.uri' "$fname/$file"_policy.json`
-            fi
-            if [ "$poldesc" == "" ]
-            then
-              poldesc=$dname
-            fi
-            if [ "$params_dict" == "" ]
-            then
-              params_dict={}
-            fi
-            echo '{
-              "name": '"\"$name\""',
-              "display_name": '"\"$dname\""',
-              "description": '"\"$poldesc\""',
-              "category": "service",
-              "status": "active",
-              "content": '$contentstring',
-              "parameters": '"\"$params_dict\""',
-              "classification": '"\"$classify\""',
-              "sub_classification": '"\"$subclassify\""',
-              "resource_type": '"\"$rtype\""',
-              "service_resource": '"$serviceresource"',
-              "severity": '"\"$sev\""',
-              "type": [
-                "Cloud"
-              ],
-              "services": [
-                "GCP"
-              ],
-              "scope": "global",
-              "metadata": {},
-              "resources": [],
-              "is_temp": false,
-              "is_system_policy": false,
-              "engine_type": "gcp_policy",
-              "uri": '"\"$uri\""'
-            }
-            ' > $fname/$file.json
-            #for var in `jq -r '.metadata.resource_type[]' "$fname/$file"_policy.json 2>/dev/null`
-            #do
-            #  jq --arg var $var '.resource_type[.resource_type| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-            #done
-            for var in `jq -r '.metadata.service_resource[]' "$fname/$file"_policy.json 2>/dev/null`
-            do
-              jq --arg var $var '.service_resource[.service_resource| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-            done
-            for var in `jq -r '.metadata.resources[]' "$fname/$file"_policy.json 2>/dev/null`
-            do
-                    jq --arg var $var '.resources[.resources| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-            done
-            uri=`jq -r '.uri' $fname/$file.json`
-            jq --arg var $uri '.metadata.uri = $var' "$fname/$file"_policy.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json "$fname/$file"_policy.json
-          }
-          ### Metadata generator for gcp policies
-          createcorestackpolicymetadata()
-          {
-            contentstring=`/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/json2string.py "$fname/$file"_policy.json`
-            name=`echo $file`
-            dname=`echo $file|sed 's/_/ /g'`
-            poldesc=`jq -r '.policy_description' "$fname"/csmetadata.json 2>/dev/null`
-            classify=`jq -r '.classification' "$fname"/csmetadata.json`
-            subclassify=`jq -r '.sub_classification' "$fname"/csmetadata.json`
-            sev=`jq -r '.severity' "$fname"/csmetadata.json`
-            rtype=`jq -r '.resource_type' "$fname"/csmetadata.json`
-            serviceresource=`jq -r '.service_resource' "$fname"/csmetadata.json`
-            params_dict=`jq -r '.params_dict' "$fname"/csmetadata.json`
-            rec_name=`jq -r '.recommendation_name' "$fname"/csmetadata.json`
-            assessment_dict=`jq -r '.assessment' "$fname"/csmetadata.json`
-            uriid=`date | md5sum | cut -c 1-5`
-            if [[ "`jq -r '.uri' "$fname"/csmetadata.json`" == "" || "`jq -r '.uri' "$fname"/csmetadata.json`" == "null" ]]
-            then
-              uri="policy/corestack_policy/global/aws/operation/instances/$uriid"
-            else
-              if [ "`jq -r '.uri' "$fname"/csmetadata.json|awk -F/ '{print $7}'`" == "" ]
-              then
-                uriprefix=`jq -r '.uri' "$fname"/csmetadata.json|sed s'/[/]$//'`
-                uri=$uriprefix/$uriid
-              else
-                uri=`jq -r '.uri' "$fname"/csmetadata.json`
-              fi
-            fi
-            if [ "$poldesc" == "" ]
-            then
-              poldesc=$dname
-            fi
-            if [ "$rec_name" == "" ]
-            then
-              rec_name=$name
-            fi
-            if [ "$params_dict" == "null" ]
-            then
-              params_dict={}
-            fi
-            if [[ "$assessment_dict" == "" ||  "$assessment_dict" == "null" ]]
-            then
-              assessment_dict={}
-            fi
-            if [ -f "$fname/$file"_policy_rule.json ]
-            then
-              echo "corestack policy content rule detected"
-              policy_rule=`jq -r '.policy_rule' "$fname/$file"_policy_rule.json`
-            else
-              policy_rule={}
-            fi
-            if [ -f "$fname/$file".sql ]
-            then
-              output=`/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/json2string.py "$fname/$file".sql`
-              p_name=`jq -r '.RuleName' "$fname/$file"_policy.json`
-              echo "sql content detected"
-              echo '{
-                      "name": '"\"$name\""',
-                      "display_name": '"\"$dname\""',
-                      "description": '"\"$poldesc\""',
-                      "category": "service",
-                      "status": "active",
-                      "content": '$contentstring',
-                      "parameters": '"\"$params_dict\""',
-                      "classification": '"\"$classify\""',
-                      "sub_classification": '"\"$subclassify\""',
-                      "resource_type": '"\"$rtype\""',
-                      "service_resource": '"$serviceresource"',
-                      "severity": '"\"$sev\""',
-                      "type": [
-                        "Cloud"
-                      ],
-                      "services": [
-                        "AWS"
-                      ],
-                      "scope": "global",
-                      "metadata": {},
-                      "resources": [],
-                      "is_temp": false,
-                      "is_system_policy": false,
-                      "engine_type": "corestack_policy",
-                      "recommendation": {
-                                    "name": '"\"$rec_name\""',
-                                    "description": '"\"$poldesc\""',
-                                    "actions": []
-                                  },
-                      "uri": '"\"$uri\""',
-                      "assessment": '$assessment_dict',
-                      "policy_rule": '$policy_rule',
-                      "rule_procedure": {
-                        "script": '$output'
-                        }
-                    }
-                    ' > $fname/$file.json
-            else
-              echo '{
-                      "name": '"\"$name\""',
-                      "display_name": '"\"$dname\""',
-                      "description": '"\"$poldesc\""',
-                      "category": "service",
-                      "status": "active",
-                      "content": '$contentstring',
-                      "parameters": '"\"$params_dict\""',
-                      "classification": '"\"$classify\""',
-                      "sub_classification": '"\"$subclassify\""',
-                      "resource_type": '"\"$rtype\""',
-                      "service_resource": '"$serviceresource"',
-                      "severity": '"\"$sev\""',
-                      "type": [
-                        "Cloud"
-                      ],
-                      "services": [
-                        "AWS"
-                      ],
-                      "scope": "global",
-                      "metadata": {},
-                      "resources": [],
-                      "is_temp": false,
-                      "is_system_policy": false,
-                      "engine_type": "corestack_policy",
-                      "recommendation": {
-                                    "name": '"\"$rec_name\""',
-                                    "description": '"\"$poldesc\""',
-                                    "actions": []
-                                  },
-                      "uri": '"\"$uri\""',
-                      "assessment": '$assessment_dict',
-                      "policy_rule": '$policy_rule',
-                      "rule_procedure": {}
-                    }
-                    ' > $fname/$file.json
-            fi
-            #for var in `jq -r '.metadata.resource_type[]' "$fname/$file"_policy.json 2>/dev/null`
-            #do
-            #  jq --arg var $var '.resource_type[.resource_type| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-            #done
-            for var in `jq -r '.metadata.service_resource[]' "$fname/$file"_policy.json 2>/dev/null`
-            do
-              jq --arg var $var '.service_resource[.service_resource| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-            done
-            for var in `jq -r '.metadata.resources[]' "$fname/$file"_policy.json 2>/dev/null`
-            do
-                    jq --arg var $var '.resources[.resources| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-            done
-            uri=`jq -r '.uri' $fname/$file.json`
-          }
-          ### Metadata generator for aws config policies
-          createawspolicymeta()
-          {
-            name=`echo $file`
-            dname=`echo $file|sed 's/_/ /g'`
-            poldesc=`jq -r '.policy_description' "$fname"/csmetadata.json 2>/dev/null`
-            rdesc=`jq -r '.recommendation_description' "$fname"/csmetadata.json 2>/dev/null`
-            classify=`jq -r '.classification' "$fname"/csmetadata.json`
-            subclassify=`jq -r '.sub_classification' "$fname"/csmetadata.json`
-            sev=`jq -r '.severity' "$fname"/csmetadata.json`
-            terms=`jq -r '.terms_and_conditions' "$fname"/csmetadata.json`
-            arn=`jq -r '.action_resource_name' "$fname"/csmetadata.json`
-            ip_args=`jq -r '.input_args' "$fname"/csmetadata.json`
-            uriid=`date | md5sum | cut -c 1-5`
-            if [[ "`jq -r '.uri' "$fname"/csmetadata.json`" == "" || "`jq -r '.uri' "$fname"/csmetadata.json`" == "null" ]]
-            then
-                    uri="policy/aws_config/global/aws/compliance/others/$uriid"
-            else
-                    if [ "`jq -r '.uri' "$fname"/csmetadata.json|awk -F/ '{print $7}'`" == "" ]
-                    then
-                    uriprefix=`jq -r '.uri' "$fname"/csmetadata.json|sed s'/[/]$//'`
-                    uri=$uriprefix/$uriid
-                    else
-                    uri=`jq -r '.uri' "$fname"/csmetadata.json`
-                    fi
-            fi
-            if [ "$poldesc" == "" ]
-            then
-              poldesc=$dname
-            fi
-            if [ "$ptype" == "security" ]
-            then
-              polpath=AWS/config/managed/security/$file
-            fi
-            if [ "$ptype" == "cost" ]
-            then
-              polpath=AWS/config/managed/cost/$file
-            fi
-            if [ "$ptype" == "access" ]
-            then
-              polpath=AWS/config/managed/access/$file
-            fi
-            if [ "$ptype" == "operations" ]
-            then
-              polpath=AWS/config/managed/operations/$file
-            fi
-            if [ "$ptype" == "resource" ]
-            then
-              polpath=AWS/config/managed/resource/$file
-            fi
-            if [ "$ptype" == "custom" ]
-            then
-              polpath=AWS/config/custom/$file
-            fi
-            echo '{
-              "name": '"\"$name\""',
-              "display_name": '"\"$dname\""',
-              "description": '"\"$poldesc\""',
-              "category": "service",
-              "status": "active",
-              "config_type": '"\"$ptype\""',
-              "content_type": "git",
-              "content_url": '"\"https://github.com/$GITHUB_REPOSITORY\""',
-              "content_path": '"\"$polpath\""',
-              "content_password_or_key": '"\"$PAT\""',
-              "content_branch": "master",
-              "content_username": "cscorestack",
-              "classification": '"\"$classify\""',
-              "sub_classification": '"\"$subclassify\""',
-              "services": [
-                "AWS"
-              ],
-              "type": [
-                "Cloud"
-              ],
-              "service_resource": [],
-              "resource_type": '"\"$rtype\""',
-              "severity": '"\"$sev\""',
-              "scope": "global",
-              "metadata": {
-              },
-              "resources": [],
-              "is_temp": false,
-              "is_system_policy": false,
-              "engine_type": "aws_config",
-              "recommendation": {
-                "name": '"\"$name\""',
-                "description": '"\"$rdesc\""',
-                "actions": [
-                    {
-                    "name": '"\"$name\""',
-                    "terms_and_conditions": '"\"$terms\""',
-                    "resource_level": "yes",
-                    "action_type": "template",
-                    "action_resource_name": '"\"$arn\""',
-                    "preexecute_required": false,
-                    "input_args": '"$ip_args"'
-                    }
-                ],
-                "action_details": {
-                  '"\"$name\""': {}
-                }
-              },
-              "uri": '"\"$uri\""'
-            }' > $fname/$file.json
-            for var in `jq -r '.service_resource[]' "$fname"/csmetadata.json 2>/dev/null`
-            do
-                    jq --arg var $var '.service_resource[.service_resource| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-            done
-            for var in `jq -r '.actions[]' "$fname"/csmetadata.json 2>/dev/null`
-            do
-                    jq --arg var $var '.recommendations.actions[.recommendations.actions| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-            done
-            uri=`jq -r '.uri' $fname/$file.json`
-            jq --arg var $uri '.uri = $var' "$fname"/csmetadata.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json "$fname"/csmetadata.json
-          }
-          createoraclepolicymeta()
-            {
-              name=`echo $file`
-              contentstring=`/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/json2string.py "$fname/"parameters_oracle.json`
-              dname=`echo $file|sed 's/_/ /g'`
-              poldesc=`jq -r '.policy_description' "$fname"/csmetadata.json 2>/dev/null`
-              rdesc=`jq -r '.recommendation_description' "$fname"/csmetadata.json 2>/dev/null`
-              classify=`jq -r '.classification' "$fname"/csmetadata.json`
-              subclassify=`jq -r '.sub_classification' "$fname"/csmetadata.json`
-              rtype=`jq -r '.resource_type' "$fname"/csmetadata.json`
-              sev=`jq -r '.severity' "$fname"/csmetadata.json`
-              uriid=`date | md5sum | cut -c 1-5`
-              if [[ "`jq -r '.uri' "$fname"/csmetadata.json`" == "" || "`jq -r '.uri' "$fname"/csmetadata.json`" == "null" ]]
-              then
-                      uri="policy/oracle_cloud_guard/global/oracle/compliance/others/$uriid"
-              else
-                      if [ "`jq -r '.uri' "$fname"/csmetadata.json|awk -F/ '{print $7}'`" == "" ]
-                      then
-                      uriprefix=`jq -r '.uri' "$fname"/csmetadata.json|sed s'/[/]$//'`
-                      uri=$uriprefix/$uriid
-                      else
-                      uri=`jq -r '.uri' "$fname"/csmetadata.json`
-                      fi
-              fi
-              if [ "$poldesc" == "" ]
-              then
-                poldesc=$dname
-              fi
-              echo '{
-                "name": '"\"$name\""',
-                "display_name": '"\"$dname\""',
-                "description": '"\"$poldesc\""',
-                "category": "service",
-                "status": "active",
-                "content": '$contentstring',
-                "classification": '"\"$classify\""',
-                "sub_classification": '"\"$subclassify\""',
-                "services": [
-                  "OCI"
-                ],
-                "type": [
-                  "Cloud"
-                ],
-                "service_resource": [],
-                "resource_type": '"\"$rtype\""',
-                "severity": '"\"$sev\""',
-                "scope": "global",
-                "metadata": {
-                },
-                "resources": [],
-                "is_temp": false,
-                "is_system_policy": false,
-                "engine_type": "oracle_cloud_guard",
-                "recommendation": {
-                  "name": '"\"$name\""',
-                  "description": '"\"$rdesc\""',
-                  "actions": [],
-                  "resource_type": '"\"$rtype\""'
-                },
-                "uri": '"\"$uri\""'
-              }' > $fname/$file.json
-              for var in `jq -r '.service_resource[]' "$fname"/csmetadata.json 2>/dev/null`
-              do
-                      jq --arg var $var '.service_resource[.service_resource| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-              done
-              for var in `jq -r '.actions[]' "$fname"/csmetadata.json 2>/dev/null`
-              do
-                      jq --arg var $var '.recommendations.actions[.recommendations.actions| length] |= . + $var' $fname/$file.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json $fname/$file.json
-              done
-              uri=`jq -r '.uri' $fname/$file.json`
-              jq --arg var $uri '.uri = $var' "$fname"/csmetadata.json > "$fname/$file"_tmp.json; mv "$fname/$file"_tmp.json "$fname"/csmetadata.json
-            }
-          # Determine added/updated policies
-          for file in `cat $HOME/files_added`
-          do
-            echo $file|rev |cut -d "/" -f 2- | rev
-          done|uniq > $HOME/policies_added
-          # Determine policy type and call appropriate metadata generator function
-          cd $GITHUB_WORKSPACE
-          for fname in `cat $HOME/policies_added|grep -v .github|grep -v README.md`
-          do
-            fname=`echo $fname|sed 's/\/$//'`
-            wname=$fname
-            file=`echo $fname|awk -F/ '{print $NF}'`
-            ptype=`echo $fname|awk -F/ '{print $(NF-1)}'`
-            cpath="/$fname/$file"_content.json
-            cpath=`echo $cpath|sed 's/\//%2F/g'`
-            fname=$GITHUB_WORKSPACE/$fname
-            echo "Determined policy path: $fname"
-            echo "Determined policy name: $file"
-            echo "Checking policy folder location ... "
-            if [ -f "$fname/$file"_policy.json ]
-            then
-              echo "Policy file detected"
-              if [[ "$ptype" == "azurepolicy" || "$ptype" == "access" || "$ptype" == "cost" || "$ptype" == "operation" || "$ptype" == "resource" || "$ptype" == "security" ]]
-              then
-                echo "Detected azure policy"
-                createazurepolicymeta
-              fi
-            fi
-            if [ -f "$fname/$file"_policy.json ]
-            then
-              echo "Policy file detected"
-              if [[ "$ptype" == "azureadvisor" || "$ptype" == "access" || "$ptype" == "cost" || "$ptype" == "operation" || "$ptype" == "resource" || "$ptype" == "security" ]]
-              then
-                echo "Detected azure advisor policy"
-                createadvisormeta
-              fi
-            fi
-            if [ -f "$fname/$file"_policy.json ]
-            then
-              echo "Policy file detected"
-              if [[ "$ptype" == "gcp" || "$ptype" == "gcp_organization" || "$ptype" == "access" || "$ptype" == "cost" || "$ptype" == "operation" || "$ptype" == "resource" || "$ptype" == "security" ]]
-              then
-                echo "Detected gcp policy"
-                creategcppolicymetadata
-              fi
-            fi
-            if [ -f "$fname/$file"_policy.json ]
-            then
-              echo "Policy file detected"
-              if [[ "$ptype" == "managed" || "$ptype" == "access" || "$ptype" == "cost" || "$ptype" == "operation" || "$ptype" == "resource" || "$ptype" == "security" ]]
-              then
-                echo "Detected corestack policy"
-                `/usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/policy_validator.py "$fname/" corestack_policy`
-                createcorestackpolicymetadata
-              fi
-            fi
-            if [ -f "$fname"/parameters.json ]
-            then
-              if [[ "$ptype" == "config" || "$ptype" == "managed" || "$ptype" == "custom" || "$ptype" == "access" || "$ptype" == "cost" || "$ptype" == "operation" || "$ptype" == "resource" || "$ptype" == "security" ]]
-              echo "Detected aws policy"
-              then
-                createawspolicymeta
-              fi
-            fi
-            if [ -f "$fname"/parameters_oracle.json ]
-            then
-              echo "Detected oracle policy"
-              createoraclepolicymeta
-            fi
-            # Start to upload the policy
-            if [ -d $fname ]
-            then
             echo "Uploading Policy ..."
             sudo /usr/bin/python2.7 $GITHUB_WORKSPACE/.github/scripts/resource_loader.py http://$COREHOST:18080/v1 $COREUSER $COREPASS policy $fname/ A -s $POLICYSCOPE --update
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            fi
-            added=false
-            # Add changed files back to git
-            if [[ -f "$fname/$file"_policy.json && -f "$fname/$file".json && "$ptype" == "azurepolicy" || -f "$fname/$file"_policy.json && -f "$fname/$file".json && "$ptype" == "azureadvisor" || -f "$fname/$file"_policy.json && -f "$fname/$file".json && "$ptype" == "gcp" ]]
-            then
-              git add "$fname/$file"_policy.json
-              git add "$fname/$file".json
-              added=true
-            fi
-            if [[ -f "$fname/$file"_policy.json && -f "$fname/$file".json && "$ptype" == "managed" ]]
-            then
-              git add "$fname/$file"_policy.json
-              git add "$fname/$file".json
-              added=true
-            fi
-            if [ -f "$fname"/csmetadata.json ]
-            then
-              git add "$fname"/csmetadata.json
+          fi          
+        done
+        if [ "$added" == "true" ]
+        then
+        git diff-index --quiet HEAD || git commit -m "updated by github workflow"
