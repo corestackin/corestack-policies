@@ -3,7 +3,7 @@
 #
 
 
-name: QA-CI
+name: DEV-CI
 on:
   push:
     branches: [ master ]
