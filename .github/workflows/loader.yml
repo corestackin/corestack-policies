@@ -3,17 +3,17 @@
 #
 
 
-name: DEV-CI
+name: DEV3-CI
 on:
   push:
-    branches: [ master ]
+    branches: [ dev3 ]
     paths:
     - 'AWS/**'
     - 'Azure/**'
     - 'Oracle/**'
     - 'GCP/**'
   pull_request:
-    branches: [ master ]
+    branches: [ dev3 ]
     paths:
       - 'AWS/**'
       - 'Azure/**'
@@ -73,7 +73,7 @@ jobs:
         REPOUSERNAME: ${{ secrets.GITPOLICYUSER }}
         REPOKEY: ${{ secrets.GITPOLICYPASSWORD }}
         PAT: ${{ secrets.GITPOLICYPASSWORD }}
-        COREHOST: ${{ secrets.DEVHOST }}
+        COREHOST: ${{ secrets.DEV3HOST }}
         COREUSER: ${{ secrets.DEVUSER }}
         COREPASS: ${{ secrets.DEVPASS }}
         GITPASS: ${{ secrets.GIT_SECRET }}
