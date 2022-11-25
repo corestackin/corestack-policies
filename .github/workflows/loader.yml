@@ -6,14 +6,14 @@
 name: DEV3-CI
 on:
   push:
-    branches: [ dev3 ]
+    branches: [ master ]
     paths:
     - 'AWS/**'
     - 'Azure/**'
     - 'Oracle/**'
     - 'GCP/**'
   pull_request:
-    branches: [ dev3 ]
+    branches: [ master ]
     paths:
       - 'AWS/**'
       - 'Azure/**'
